@@ -29,9 +29,9 @@ def soak_env(db):
 
     candidate = CandidateProfile.objects.create(
         user=user,
-        full_name="Candidate Mehmood",
+        full_name="Alex Morgan",
         email="candidate-2@example.com",
-        phone="+15551234567",
+        phone="+12025550100",
     )
     CandidateIdentityVerification.objects.create(
         candidate_profile=candidate,
@@ -118,7 +118,7 @@ def test_tmv_email_acknowledgement_reconciliation_and_duplicate_protection(soak_
         provider="linkedin",
         external_job_id="4456601170",
         evidence_type=ConfirmationEvidenceType.OPERATOR_CONFIRMED_LINKEDIN_EMAIL,
-        metadata={"subject": "Candidate Mehmood, your application was sent to TMV Global Inc"}
+        metadata={"subject": "Alex Morgan, your application was sent to TMV Global Inc"}
     )
 
     app.refresh_from_db()

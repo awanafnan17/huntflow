@@ -53,9 +53,9 @@ def multi_channel_env(db):
 
     candidate = CandidateProfile.objects.create(
         user=user,
-        full_name="Candidate Mehmood",
+        full_name="Alex Morgan",
         email="candidate-2@example.com",
-        phone="+15551234567",
+        phone="+12025550100",
     )
     CandidateIdentityVerification.objects.create(
         candidate_profile=candidate,
@@ -118,7 +118,7 @@ def multi_channel_env(db):
     lp = LinkedInProfile.objects.create(
         user=user,
         workspace=workspace,
-        linkedin_username="candidate-mehmood",
+        linkedin_username="alex-morgan",
         session_status="valid",
         active=True
     )

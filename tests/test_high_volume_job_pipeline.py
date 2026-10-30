@@ -58,7 +58,7 @@ class TestHighVolumeJobPipeline:
             user=self.user_b,
             full_name="Bob Smith",
             email="bob_b@example.com",
-            phone="+14155550199"
+            phone="+12025550106"
         )
         self.cpv_b = CandidateProfileVersion.objects.create(
             profile=self.candidate_b,
@@ -83,7 +83,7 @@ class TestHighVolumeJobPipeline:
             user=self.user_c,
             full_name="Carol Danvers",
             email="carol_c@example.com",
-            phone="+14155550288"
+            phone="+12025550105"
         )
         self.cpv_c = CandidateProfileVersion.objects.create(
             profile=self.candidate_c,

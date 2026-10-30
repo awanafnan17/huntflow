@@ -8,6 +8,7 @@ This public source snapshot was reviewed against the current application tree. T
 - `pytest -q tests/test_job_matching.py tests/test_daemon_controls.py tests/test_career.py`: **32 passed** in an isolated pytest test database; 19 warnings noted missing generated `staticfiles/` in the clean checkout.
 - Focused model/configuration, provider-parser, synthetic-transport, external-action, tenant-isolation and public-release safety tests: **59 passed** in an isolated pytest database.
 - Four additional job-transport tests initially could not run because ReportLab was missing from the reused local environment; they are not counted as passing.
+- Follow-up synthetic-fixture and public-release regression checks: **11 passed**; the Git history secret scan also found no matches.
 - Public source Gitleaks scan: **no findings** after replacing scanner-matched synthetic test literals.
 
 The complete historical test suite, a fresh dependency install, container build and live account workflows were not run for this publication. Live LinkedIn messages, emails and job applications were never triggered while preparing it.

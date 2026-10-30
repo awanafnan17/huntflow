@@ -161,7 +161,7 @@ class TestIdentityConfirmationExecution:
         self.client.post(url, {
             "profile_id": self.cand_profile.id,
             "action": "confirm_identity",
-            "confirmed_name": "candidate mehmood awan"
+            "confirmed_name": "alex morgan"
         })
         assert not CandidateIdentityVerification.objects.filter(candidate_profile=self.cand_profile).exists()
         

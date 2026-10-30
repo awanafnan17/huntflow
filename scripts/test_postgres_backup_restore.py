@@ -72,8 +72,8 @@ def main():
     # Ensure test data exists by populating minimal records if empty
     user, _ = User.objects.get_or_create(username="pg_qa_owner")
     ws, _ = Workspace.objects.get_or_create(name="Postgres QA WS", slug="pg-qa-ws")
-    cand_prof, _ = CandidateProfile.objects.get_or_create(user=user, defaults={"full_name": "Candidate Mehmood Awan", "email": "operator@example.com"})
-    v6, _ = CandidateProfileVersion.objects.get_or_create(profile=cand_prof, version_number=3, defaults={"full_name": "Candidate Mehmood Awan", "email": "operator@example.com", "state": "approved", "is_finalized": True})
+    cand_prof, _ = CandidateProfile.objects.get_or_create(user=user, defaults={"full_name": "Alex Morgan", "email": "operator@example.com"})
+    v6, _ = CandidateProfileVersion.objects.get_or_create(profile=cand_prof, version_number=3, defaults={"full_name": "Alex Morgan", "email": "operator@example.com", "state": "approved", "is_finalized": True})
     camp, _ = Campaign.objects.get_or_create(workspace=ws, name="PG Test Campaign", defaults={"campaign_type": "job_outreach", "is_active": True})
     pref, _ = JobSearchPreference.objects.get_or_create(
         campaign=camp,

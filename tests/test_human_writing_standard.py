@@ -136,7 +136,7 @@ def test_retry_success_and_exhaustion():
     campaign.connection_note_template = ""
     campaign.name = "Test Campaign"
     
-    profile = {"first_name": "Candidate", "last_name": "Awan"}
+    profile = {"first_name": "Candidate", "last_name": "Morgan"}
     
     def make_mock_agent_runner(returns_list):
         def _side_effect(coro, *args, **kwargs):

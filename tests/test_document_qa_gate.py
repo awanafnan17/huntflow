@@ -45,7 +45,7 @@ class TestDocumentQAGate:
         )
 
         self.valid_resume = (
-            "CANDIDATE AWAN\n"
+            "ALEX MORGAN\n"
             "awancandidate17@example.com | +1-202-555-0101\n\n"
             "PROFESSIONAL SUMMARY\n"
             "Senior Python Architect with 5+ years experience.\n\n"

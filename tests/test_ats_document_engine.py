@@ -81,7 +81,7 @@ class TestATSDocumentEngine:
 
         resume_text = generate_ats_resume_text(self.candidate, jd_reqs, kw_map)
 
-        assert "CANDIDATE AWAN" in resume_text
+        assert "ALEX MORGAN" in resume_text
         assert "PROFESSIONAL SUMMARY" in resume_text
         assert "TECHNICAL SKILLS" in resume_text
         assert "PROFESSIONAL EXPERIENCE" in resume_text

@@ -123,7 +123,7 @@ class TestCandidateJobProfileReadinessGate:
         """B. Missing optional fields (e.g. linkedin_url, notice_period) do not block readiness."""
         self.app_prof.full_name = "Test Candidate"
         self.app_prof.email = "candidate@example.com"
-        self.app_prof.phone = "+1 555 123 4567"
+        self.app_prof.phone = "+12025550104"
         self.app_prof.city = "San Francisco"
         self.app_prof.country = "United States"
         self.app_prof.linkedin_url = ""  # Optional!
@@ -169,7 +169,7 @@ class TestCandidateJobProfileReadinessGate:
         """D. Required facts complete but confirmed=False blocks application execution."""
         self.app_prof.full_name = "Test Candidate"
         self.app_prof.email = "candidate@example.com"
-        self.app_prof.phone = "+1 555 123 4567"
+        self.app_prof.phone = "+12025550104"
         self.app_prof.city = "San Francisco"
         self.app_prof.country = "United States"
         self.app_prof.authorized_countries = ["US"]
@@ -202,7 +202,7 @@ class TestCandidateJobProfileReadinessGate:
         """E. Profile confirmed, but clearing a critical field in UI resets confirmation."""
         self.app_prof.full_name = "Test Candidate"
         self.app_prof.email = "candidate@example.com"
-        self.app_prof.phone = "+1 555 123 4567"
+        self.app_prof.phone = "+12025550104"
         self.app_prof.city = "San Francisco"
         self.app_prof.country = "United States"
         self.app_prof.authorized_countries = ["US"]
@@ -272,7 +272,7 @@ class TestCandidateJobProfileReadinessGate:
             cand_2_initial_confirmed = cand_2_app_prof.confirmed
 
             # Modify fixture
-            self.app_prof.phone = "+1 999 888 7777"
+            self.app_prof.phone = "+12025550103"
             self.app_prof.confirmed = True
             self.app_prof.save()
 

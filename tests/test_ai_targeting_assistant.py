@@ -75,7 +75,7 @@ def targeting_env(db, django_user_model):
         user=user,
         full_name="Alex Morgan",
         email="candidate@example.com",
-        phone="+15551234567",
+        phone="+12025550100",
     )
     from openoutreach.career.models import CandidateIdentityVerification, CandidateApplicationProfile, JobApplicationAnswer
     CandidateIdentityVerification.objects.create(

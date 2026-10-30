@@ -48,7 +48,7 @@ def test_backlog_governance_gate_pauses_connections_not_jobs():
         user=user,
         full_name="Gov Candidate",
         email="gov@example.com",
-        phone="+15550001111",
+        phone="+12025550102",
     )
     CandidateIdentityVerification.objects.create(
         candidate_profile=candidate,
@@ -159,7 +159,7 @@ def test_daily_job_application_limit_enforced():
         user=user,
         full_name="Daily Candidate",
         email="daily@example.com",
-        phone="+15550002222",
+        phone="+12025550101",
     )
     CandidateIdentityVerification.objects.create(
         candidate_profile=candidate,

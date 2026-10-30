@@ -18,7 +18,7 @@ SAMPLE_PROFILE = {
 CONTACT = {
     "email": "alice@acme.com",
     "emails": ["alice@acme.com"],
-    "phone_numbers": ["+15551234567"],
+    "phone_numbers": ["+12025550100"],
 }
 EMPTY = {"email": None, "emails": [], "phone_numbers": []}
 

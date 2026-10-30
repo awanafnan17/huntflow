@@ -37,7 +37,7 @@ class TestOllamaATSIntelligence:
             user=self.user,
             full_name="Alex Mercer",
             email="alex.mercer@example.com",
-            phone="+14155550199"
+            phone="+12025550106"
         )
         self.cpv = CandidateProfileVersion.objects.create(
             profile=self.candidate,
