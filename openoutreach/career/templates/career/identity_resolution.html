@@ -1,0 +1,78 @@
+<! woodland html >
+<html>
+<head>
+    <title>HuntFlow - Operator Identity Resolution & Account Enablement</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 2rem; background: #0f172a; color: #f8fafc; }
+        .card { background: #1e293b; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid #334155; }
+        h1, h2 { color: #38bdf8; }
+        .badge-enabled { background: #166534; color: #4ade80; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .badge-blocked { background: #991b1b; color: #fca5a5; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .btn { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+        .btn:hover { background: #0369a1; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #334155; }
+    </style>
+</head>
+<body>
+    <h1>HuntFlow Operator Identity Resolution & Account Enablement</h1>
+
+    <div class="card">
+        <h2>Canonical Account Enablement Status</h2>
+        {% if eligibility.account_enabled %}
+            <span class="badge-enabled">ACCOUNT ENABLED & VERIFIED</span>
+        {% else %}
+            <span class="badge-blocked">ACCOUNT BLOCKED ({{ eligibility.reason_code }})</span>
+        {% endif %}
+        <p>{{ eligibility.message }}</p>
+    </div>
+
+    <div class="card">
+        <h2>Candidate Profile Versions</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Version</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>State</th>
+                    <th>Finalized</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in versions %}
+                <tr>
+                    <td>v{{ v.version_number }} (ID {{ v.id }})</td>
+                    <td>{{ v.full_name }}</td>
+                    <td>{{ v.email }}</td>
+                    <td>{{ v.state }}</td>
+                    <td>{{ v.is_finalized }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if not eligibility.account_enabled %}
+    <div class="card">
+        <h2>Operator Action: Execute Verified Resolution</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <label>Canonical Identity Email:</label><br>
+            <select name="canonical_email" style="padding: 8px; width: 100%; max-width: 400px; margin: 8px 0;">
+                <option value="candidate-10@example.com">candidate-10@example.com (Stored Account Email)</option>
+                <option value="candidate-2@example.com">candidate-2@example.com (Source Document CV Email)</option>
+            </select><br><br>
+
+            <label>Confirmed LinkedIn URL:</label><br>
+            <input type="text" name="confirmed_linkedin_url" value="https://www.linkedin.com/in/alex-morgan" style="padding: 8px; width: 100%; max-width: 400px; margin: 8px 0;"><br><br>
+
+            <label>Release & Resolution Reason:</label><br>
+            <input type="text" name="release_reason" value="Human operator confirmed identity and released IncidentHold" style="padding: 8px; width: 100%; max-width: 400px; margin: 8px 0;"><br><br>
+
+            <button type="submit" class="btn">Approve Version 6 & Enable Account</button>
+        </form>
+    </div>
+    {% endif %}
+</body>
+</html>

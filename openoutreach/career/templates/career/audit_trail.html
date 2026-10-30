@@ -1,0 +1,43 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Candidate Security Audit Trail{% endblock %}
+
+{% block page_title %}Candidate Security Audit Trail{% endblock %}
+{% block page_subtitle %}Comprehensive history of candidate document downloads, approvals, uploads, and profile modifications.{% endblock %}
+
+{% block main_content %}
+<div class="card" style="padding: 24px; max-width: 1000px;">
+    <div>
+        <a href="{% url 'career:overview' %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline; display: block; margin-bottom: 20px;">
+            &larr; Back to Career Overview
+        </a>
+    </div>
+
+    <table class="data-table" style="font-size: 13px;">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Operator</th>
+                <th>Event Type</th>
+                <th>Description</th>
+                <th>IP Address</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in audit_events %}
+            <tr>
+                <td style="white-space: nowrap;">{{ log.timestamp|date:"Y-m-d H:i:s" }} UTC</td>
+                <td>{{ log.user.username|default:"System" }}</td>
+                <td style="font-weight: bold;">{{ log.event_type }}</td>
+                <td style="color: #475569;">{{ log.description }}</td>
+                <td>{{ log.ip_address|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 24px; color: #64748b;">No security audit events recorded.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

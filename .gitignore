@@ -1,0 +1,44 @@
+# Secrets and machine-specific configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.credentials.json
+# Private runtime and user records
+data/
+media/
+private_media/
+.browser_profile/
+.private/
+artifacts/
+backups/
+staticfiles/
+logs/
+*.log
+*.sqlite*
+*.db
+*.sql
+*.dump
+*.bundle
+*storage_state*.json
+*cookies*.json
+# Local tooling
+.DS_Store
+.venv/
+.venv.*/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage*
+htmlcov/
+.cache/
+*.egg-info/
+build/
+dist/
+test-results/
+playwright-report/

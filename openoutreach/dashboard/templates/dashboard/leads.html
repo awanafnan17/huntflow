@@ -1,0 +1,138 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Leads{% endblock %}
+
+{% block page_title %}Leads{% endblock %}
+{% block page_subtitle %}Review prospects, contact status, and resolved emails.{% endblock %}
+
+{% block main_content %}
+<div class="toolbar" style="flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+    <form method="get" style="display: flex; flex-wrap: wrap; gap: 12px; width: 100%; align-items: center;">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search by handle, email, or URL..." class="input-text" style="max-width: 280px; flex: 1;">
+        
+        <select name="campaign_id" class="input-text" style="max-width: 200px; flex: 1;">
+            <option value="">All Campaigns</option>
+            {% for campaign in campaigns %}
+                <option value="{{ campaign.id }}" {% if campaign.id|stringformat:"s" == selected_campaign %}selected{% endif %}>{{ campaign.name }}</option>
+            {% endfor %}
+        </select>
+        
+        <select name="status" class="input-text" style="max-width: 160px; flex: 1;">
+            <option value="">All Statuses</option>
+            {% for choice in statuses %}
+                <option value="{{ choice.0 }}" {% if choice.0 == selected_status %}selected{% endif %}>{{ choice.1 }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="email_filter" class="input-text" style="max-width: 140px; flex: 1;">
+            <option value="">All Emails</option>
+            <option value="has_email" {% if email_filter == "has_email" %}selected{% endif %}>Has Email</option>
+            <option value="no_email" {% if email_filter == "no_email" %}selected{% endif %}>No Email</option>
+        </select>
+        
+        <select name="deal_filter" class="input-text" style="max-width: 140px; flex: 1;">
+            <option value="">All Deals</option>
+            <option value="has_deal" {% if deal_filter == "has_deal" %}selected{% endif %}>Has Deal</option>
+            <option value="discovered_only" {% if deal_filter == "discovered_only" %}selected{% endif %}>Discovered Only</option>
+        </select>
+
+        <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #475569; user-select: none;">
+            <input type="checkbox" name="failed_only" value="yes" {% if failed_only == "yes" %}checked{% endif %}>
+            Failed Only
+        </label>
+
+        <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #475569; user-select: none;">
+            <input type="checkbox" name="pending_only" value="yes" {% if pending_only == "yes" %}checked{% endif %}>
+            Pending Only
+        </label>
+        
+        <button type="submit" class="btn btn-primary">Filter</button>
+        {% if query or selected_campaign or selected_status or email_filter or deal_filter or failed_only or pending_only %}
+            <a href="{% url 'dashboard:leads' %}" class="btn">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Identifier</th>
+                <th>Title</th>
+                <th>Company</th>
+                <th>Email Address</th>
+                <th>FSM State</th>
+                <th>Campaign</th>
+                <th>Last Action</th>
+                <th>Eligibility</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in leads %}
+            <tr>
+                <td style="font-weight: 600;">
+                    {{ item.full_name }}
+                    {% if item.full_name != item.lead.public_identifier %}
+                        <span style="font-size: 11px; font-weight: normal; color: #64748b; display: block;">@{{ item.lead.public_identifier }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ item.title }}</td>
+                <td>{{ item.company }}</td>
+                <td>
+                    {% if item.lead.api_email %}
+                        <span style="font-family: monospace;">{{ item.lead.api_email }}</span>
+                    {% else %}
+                        <span class="text-light">Not resolved</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge {% if item.state == 'Connected' %}badge-success{% elif item.state == 'Pending' %}badge-info{% elif item.state == 'Failed' %}badge-danger{% else %}badge-warning{% endif %}">
+                        {{ item.state }}
+                    </span>
+                </td>
+                <td>{{ item.campaign_name }}</td>
+                <td>
+                    {% if item.last_action_time %}
+                        {{ item.last_action_time|date:"Y-m-d H:i" }}
+                    {% else %}
+                        <span class="text-light">Never</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                        {% if item.eligible_email %}
+                            <span class="badge" style="background-color: #dbeafe; color: #1e40af; font-size: 10px; padding: 2px 6px;">Email</span>
+                        {% endif %}
+                        {% if item.eligible_connect %}
+                            <span class="badge" style="background-color: #dcfce7; color: #166534; font-size: 10px; padding: 2px 6px;">Connect</span>
+                        {% endif %}
+                        {% if item.eligible_followup %}
+                            <span class="badge" style="background-color: #fef9c3; color: #854d0e; font-size: 10px; padding: 2px 6px;">Follow-up</span>
+                        {% endif %}
+                        {% if item.eligible_retry %}
+                            <span class="badge" style="background-color: #fee2e2; color: #991b1b; font-size: 10px; padding: 2px 6px;">Retry</span>
+                        {% endif %}
+                        {% if not item.eligible_email and not item.eligible_connect and not item.eligible_followup and not item.eligible_retry %}
+                            <span style="color: #94a3b8; font-size: 11px;">None</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td style="text-align: right;">
+                    <a href="{% url 'dashboard:lead_detail' item.lead.pk %}" class="btn" style="padding: 4px 8px; font-size: 12px;">View Details</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9">
+                    <div class="empty-state">
+                        <div class="empty-state-title">No leads found</div>
+                        <p>No leads match your filtering criteria or none have been imported yet.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

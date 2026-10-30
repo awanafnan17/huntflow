@@ -1,0 +1,83 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}LinkedIn Accounts{% endblock %}
+
+{% block page_title %}LinkedIn Accounts{% endblock %}
+{% block page_subtitle %}Manage LinkedIn automated browser operator profiles.{% endblock %}
+
+{% block main_content %}
+{% if messages %}
+    {% for msg in messages %}
+        <div class="alert alert-info" style="border-color: #bfdbfe; color: #1e3a8a; background-color: #eff6ff;">
+            {{ msg }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Identifier</th>
+                <th>Username / Email</th>
+                <th>Active</th>
+                <th>Daily Limit (Connect)</th>
+                <th>Daily Limit (Follow-Up)</th>
+                <th>Last Action</th>
+                <th>Campaigns Assigned</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in profiles %}
+            <tr>
+                <td style="font-weight: 600;">{{ item.profile.self_lead.public_identifier|default:"(Discovering...)" }}</td>
+                <td>{{ item.profile.linkedin_username }}</td>
+                <td>
+                    {% if item.profile.active %}
+                        <span class="badge badge-success">Active</span>
+                    {% else %}
+                        <span class="badge badge-danger">Inactive</span>
+                    {% endif %}
+                </td>
+                <td>{% if item.profile.connect_daily_limit is None %}Unlimited{% else %}{{ item.profile.connect_daily_limit }}{% endif %}</td>
+                <td>{% if item.profile.follow_up_daily_limit is None %}Unlimited{% else %}{{ item.profile.follow_up_daily_limit }}{% endif %}</td>
+                <td>
+                    {% if item.last_action %}
+                        {{ item.last_action|date:"Y-m-d H:i:s" }} UTC
+                    {% else %}
+                        <span class="text-light">Never</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge badge-info">{{ item.campaign_count }} campaigns</span>
+                </td>
+                <td style="text-align: right;">
+                    <a href="{% url 'dashboard:linkedin_account_session' item.profile.pk %}" class="btn {% if item.profile.session_status == 'valid' %}btn-primary{% endif %}" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                        {% if item.profile.session_status == 'valid' %}
+                            Session Valid
+                        {% elif item.profile.session_status == 'checkpoint' %}
+                            Checkpoint ⚠️
+                        {% elif item.profile.session_status == 'restricted' %}
+                            Restricted 🚫
+                        {% else %}
+                            Check Session
+                        {% endif %}
+                    </a>
+                    <a href="{% url 'dashboard:linkedin_account_edit' item.profile.pk %}" class="btn" style="padding: 4px 8px; font-size: 12px;">Edit</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8">
+                    <div class="empty-state">
+                        <div class="empty-state-title">No LinkedIn profiles found</div>
+                        <p>Configure a profile to begin browser-based LinkedIn automation.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

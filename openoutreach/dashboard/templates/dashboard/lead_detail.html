@@ -1,0 +1,427 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Lead Details - {{ lead.public_identifier }}{% endblock %}
+
+{% block page_title %}Lead: {{ lead.public_identifier }}{% endblock %}
+{% block page_subtitle %}Detailed CRM profile, history, and message logs.{% endblock %}
+
+{% block main_content %}
+<div style="display: flex; flex-direction: column; gap: 24px;">
+
+    <div class="card" style="border-left: 4px solid #3b82f6;">
+        <h2 class="card-title" style="margin-bottom: 12px;">Pipeline State Panel</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div>
+                <span style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Current Deal State</span>
+                <div style="font-size: 18px; font-weight: 700; color: #0f172a; margin-top: 4px;">
+                    <span class="badge {% if deal %}{% if deal.state == 'Connected' %}badge-success{% elif deal.state == 'Pending' %}badge-info{% elif deal.state == 'Failed' %}badge-danger{% else %}badge-warning{% endif %}{% else %}badge-secondary{% endif %}">
+                        {% if deal %}{{ deal.state }}{% else %}Discovered{% endif %}
+                    </span>
+                </div>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Outcome & Reason</span>
+                <div style="font-size: 14px; font-weight: 600; color: #334155; margin-top: 4px;">
+                    {% if deal.outcome or deal.reason %}
+                        <strong>{{ deal.outcome|default:"None" }}</strong>: {{ deal.reason|default:"No reason listed" }}
+                    {% else %}
+                        <span style="color: #94a3b8; font-weight: 500;">No failure/outcome</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Campaign</span>
+                <div style="font-size: 14px; font-weight: 600; color: #334155; margin-top: 4px;">
+                    {{ deal.campaign.name|default:"No campaign assigned" }}
+                </div>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Email Resolution</span>
+                <div style="font-size: 14px; font-weight: 600; color: #334155; margin-top: 4px;">
+                    {% if lead.api_email %}
+                        <span class="text-success" style="font-family: monospace;">{{ lead.api_email }}</span>
+                    {% else %}
+                        <span style="color: #64748b;">Unresolved</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Outreach Eligibility</span>
+                <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px;">
+                    {% if eligible_email %}
+                        <span class="badge" style="background-color: #dbeafe; color: #1e40af; font-size: 10px; padding: 2px 6px;">Email Eligible</span>
+                    {% endif %}
+                    {% if eligible_connect %}
+                        <span class="badge" style="background-color: #dcfce7; color: #166534; font-size: 10px; padding: 2px 6px;">Connection Eligible</span>
+                    {% endif %}
+                    {% if eligible_followup %}
+                        <span class="badge" style="background-color: #fef9c3; color: #854d0e; font-size: 10px; padding: 2px 6px;">Follow-up Eligible</span>
+                    {% endif %}
+                    {% if eligible_retry %}
+                        <span class="badge" style="background-color: #fee2e2; color: #991b1b; font-size: 10px; padding: 2px 6px;">Retry Eligible</span>
+                    {% endif %}
+                    {% if not eligible_email and not eligible_connect and not eligible_followup and not eligible_retry %}
+                        <span style="color: #94a3b8; font-size: 13px;">Not eligible for automated actions</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Provider Relationship Status Card #}
+    <div class="card" style="border-left: 4px solid #8b5cf6;">
+        <h2 class="card-title" style="margin-bottom: 12px;">
+            Provider Relationship Status
+            {% if provider_relationship.linkedin_profile %}
+                <span style="font-size: 12px; font-weight: normal; color: #64748b; margin-left: 8px;">(Account: {{ provider_relationship.linkedin_profile.linkedin_username|default:provider_relationship.linkedin_profile_id }})</span>
+            {% endif %}
+        </h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div>
+                <span style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Provider Relationship</span>
+                <div style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 4px;">
+                    <span class="badge {% if provider_relationship.classification == 'CONNECTED' %}badge-success{% elif provider_relationship.classification == 'PENDING' %}badge-info{% elif provider_relationship.classification == 'NOT_CONNECTED' %}badge-warning{% elif provider_relationship.classification == 'UNKNOWN' %}badge-secondary{% else %}badge-danger{% endif %}">
+                        {{ provider_relationship.classification|default:"UNKNOWN" }}
+                    </span>
+                </div>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Evidence Sufficient</span>
+                <div style="font-size: 14px; font-weight: 600; color: #334155; margin-top: 4px;">
+                    {% if provider_relationship.evidence_sufficient %}
+                        <span class="text-success">Yes</span>
+                    {% else %}
+                        <span class="text-warning">No (Insufficient)</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Last Checked</span>
+                <div style="font-size: 14px; font-weight: 600; color: #334155; margin-top: 4px;">
+                    {{ provider_relationship.last_observed_at|default:"Never" }}
+                </div>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Next Eligible Check</span>
+                <div style="font-size: 14px; font-weight: 600; color: #334155; margin-top: 4px;">
+                    {% if provider_relationship.operator_review_required %}
+                        <span class="text-danger">Operator Review Required</span>
+                    {% elif provider_relationship.next_eligible_reconciliation_at %}
+                        {{ provider_relationship.next_eligible_reconciliation_at }}
+                    {% else %}
+                        <span>Available / None</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Consecutive Unknowns</span>
+                <div style="font-size: 14px; font-weight: 600; color: #334155; margin-top: 4px;">
+                    {{ provider_relationship.consecutive_unknown_count|default:"0" }}
+                </div>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">First Message Gating</span>
+                <div style="font-size: 14px; font-weight: 600; margin-top: 4px;">
+                    {% if provider_relationship.classification == 'CONNECTED' and provider_relationship.evidence_sufficient %}
+                        <span class="text-success">Eligible</span>
+                    {% else %}
+                        <span class="text-danger">Blocked (Pending Confirmed Connection)</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% if provider_relationship.evidence %}
+            <div style="margin-top: 12px; font-size: 12px; color: #64748b; background: #f8fafc; padding: 8px 12px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                <strong>Evidence:</strong> {{ provider_relationship.evidence }}
+            </div>
+        {% endif %}
+    </div>
+
+    {# Operator Actions Card #}
+    <div class="card">
+        <h2 class="card-title">Operator Pipeline Actions</h2>
+        
+        {% if is_self_profile %}
+            <div style="padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; background-color: #f8fafc; color: #475569; font-size: 13px;">
+                <strong>Self-Profile Lead:</strong> This lead is linked to an active operator profile. Manual mutations are permanently blocked to prevent cycle loops.
+            </div>
+        {% else %}
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                {# Mark Qualified #}
+                <form method="post" style="margin: 0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="qualify">
+                    <button type="submit" class="btn" style="border-color: #cbd5e1; font-weight: 600;">Mark Qualified</button>
+                </form>
+
+                {# Mark Disqualified #}
+                <form method="post" style="margin: 0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="disqualify">
+                    <button type="submit" class="btn" style="border-color: #ef4444; color: #ef4444; background: transparent; font-weight: 600;">Mark Disqualified</button>
+                </form>
+
+                {# Mark Ready to Connect #}
+                <form method="post" style="margin: 0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="mark_ready_connect">
+                    {% if deal.state == 'Pending' or deal.state == 'Connected' %}
+                        <input type="hidden" name="confirm_reset" value="yes">
+                        <button type="submit" class="btn btn-warning" style="font-weight: 600;" onclick="return confirm('WARNING: This lead is currently PENDING/CONNECTED on LinkedIn. Forcing it back to Ready to Connect can cause duplicate connection attempts if they accept. Proceed?');">Force Ready to Connect</button>
+                    {% else %}
+                        <button type="submit" class="btn" style="border-color: #cbd5e1; font-weight: 600;" {% if deal and deal.state != 'Qualified' and deal.state != 'Ready to Connect' %}disabled title="Allowed only from Qualified or Ready to Connect state"{% endif %}>Mark Ready to Connect</button>
+                    {% endif %}
+                </form>
+
+                {# Mark Ready to Email #}
+                <form method="post" style="margin: 0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="mark_ready_email">
+                    {% if not lead.api_email %}
+                        <input type="hidden" name="override" value="yes">
+                        <button type="submit" class="btn btn-warning" style="font-weight: 600;" onclick="return confirm('WARNING: This lead has no email address resolved. Force mark Ready to Email?');">Force Ready to Email</button>
+                    {% else %}
+                        <button type="submit" class="btn" style="border-color: #cbd5e1; font-weight: 600;">Mark Ready to Email</button>
+                    {% endif %}
+                </form>
+
+                {# Retry Failed #}
+                {% if deal.state == 'Failed' %}
+                    <form method="post" style="margin: 0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="retry_failed">
+                        <button type="submit" class="btn btn-primary" style="font-weight: 600;">Retry Failed Lead</button>
+                    </form>
+                {% endif %}
+
+                {# Reset to Qualified #}
+                {% if deal %}
+                    <form method="post" style="margin: 0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="reset_qualified">
+                        <button type="submit" class="btn" style="border-color: #cbd5e1; font-weight: 600;" onclick="return confirm('Are you sure you want to reset this deal back to Qualified? This clears attempts, delays, outcomes, and reasons.');">Reset to Qualified</button>
+                    </form>
+                {% endif %}
+
+                {# BetterContact Resolve Email Now #}
+                <form method="post" style="margin: 0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="resolve_email_now">
+                    <button type="submit" class="btn btn-primary" {% if not bettercontact_configured or lead.api_email %}disabled{% endif %} style="padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 13px;">
+                        Resolve Email Now
+                    </button>
+                </form>
+            </div>
+            
+            <div style="font-size: 12px; color: #64748b; margin-top: 10px; display: flex; flex-direction: column; gap: 4px;">
+                <span>* Note: Reset to Discovered (deleting the Deal row) is intentionally not supported to preserve audit history integrity.</span>
+                {% if deal and deal.state == 'Pending' %}
+                <p style="font-size: 12px; color: #854d0e; margin-top: 8px; padding: 8px 10px; background-color: #fef9c3; border: 1px solid #fef08a; border-radius: 6px;">
+                    Connection request has already been sent. Automated BetterContact backfill skips pending leads by default to avoid extra paid lookups. Use Resolve Email Now if you want to force lookup.
+                </p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+        <div class="card">
+            <h2 class="card-title">Profile Identity Details</h2>
+            <div class="detail-row">
+                <span class="detail-label">Full Name</span>
+                <span class="detail-value" style="font-weight: 600;">{{ full_name }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Headline</span>
+                <span class="detail-value" style="word-break: break-word;">{{ headline }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Location</span>
+                <span class="detail-value">{{ location }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Industry</span>
+                <span class="detail-value">{{ industry }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Identity Status</span>
+                <span class="detail-value">
+                    <span class="badge {% if identity_status == 'Enriched' %}badge-success{% else %}badge-secondary{% endif %}">
+                        {{ identity_status }}
+                    </span>
+                </span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">Profile Context</h2>
+            <div class="detail-row">
+                <span class="detail-label">Lead has Deal</span>
+                <span class="detail-value">{% if deal %}Yes{% else %}No{% endif %}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Current Title</span>
+                <span class="detail-value">{{ title }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Company</span>
+                <span class="detail-value">{{ company }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Country Jurisdiction</span>
+                <span class="detail-value">{{ lead.country_code|upper|default:"Unknown" }}</span>
+            </div>
+            {% if deal %}
+            <div class="detail-row">
+                <span class="detail-label">Campaign Source</span>
+                <span class="detail-value">{{ deal.campaign.name|default:"None" }}</span>
+            </div>
+            {% else %}
+            <div style="padding: 10px 0; color: #64748b; font-size: 13px;">
+                Discovered only. Not yet qualified.
+            </div>
+            {% endif %}
+            <div class="detail-row">
+                <span class="detail-label">Creation Date</span>
+                <span class="detail-value">{{ lead.creation_date|date:"Y-m-d H:i:s" }} UTC</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">Enrichment Profile Summary</h2>
+            <ul style="padding-left: 20px; color: #1e293b; font-size: 13px;">
+                {% for fact in facts %}
+                    <li style="margin-bottom: 8px;">{{ fact }}</li>
+                {% empty %}
+                    <li style="color: #94a3b8; list-style: none; margin-left: -20px;">No facts summarized yet. Facts are materialized during first follow-up action.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+
+    <div class="card">
+        <h2 class="card-title">Outreach Audit Logs</h2>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp (UTC)</th>
+                        <th>Action Type</th>
+                        <th>Note Source</th>
+                        <th>Note Sent</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in action_logs %}
+                    <tr>
+                        <td>{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+                        <td>
+                            <span class="badge badge-info">{{ log.action_type }}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-secondary">{{ log.metadata.note_source|default:"template" }}</span>
+                        </td>
+                        <td>
+                            {% if log.metadata.note_was_sent %}
+                                <span class="badge badge-success">Yes</span>
+                            {% else %}
+                                <span class="badge badge-danger">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.metadata.failure_reason %}
+                                <span class="text-danger">{{ log.metadata.failure_reason }}</span>
+                            {% elif log.metadata.note %}
+                                <code class="code-badge">{{ log.metadata.note }}</code>
+                            {% else %}
+                                <span class="text-light">No extra details recorded.</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">
+                            <div style="padding: 24px; text-align: center; color: #94a3b8;">
+                                No action history yet. History logs appear after automated touchpoints.
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <div class="card">
+        <h2 class="card-title">LinkedIn Message Transcript</h2>
+        <div style="display: flex; flex-direction: column; gap: 16px; max-height: 400px; overflow-y: auto; padding: 12px; background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+            {% for msg in messages %}
+                <div style="display: flex; flex-direction: column; align-self: {% if msg.is_outgoing %}flex-end{% else %}flex-start{% endif %}; max-width: 70%; background-color: {% if msg.is_outgoing %}#eff6ff{% else %}#ffffff{% endif %}; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                    <div style="font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; display: flex; justify-content: space-between; gap: 16px;">
+                        <span>{% if msg.is_outgoing %}Outgoing Message{% else %}Incoming Reply{% endif %}</span>
+                        <span>{{ msg.creation_date|date:"Y-m-d H:i" }}</span>
+                    </div>
+                    <p style="font-size: 13px; color: #1e293b; white-space: pre-wrap; word-break: break-word;">{{ msg.content }}</p>
+                </div>
+            {% empty %}
+                <div style="padding: 48px 12px; text-align: center; color: #94a3b8;">
+                    No conversation messages synchronized yet.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 class="card-title">Manual Pipeline Audit Events</h2>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp (UTC)</th>
+                        <th>Operator</th>
+                        <th>Action</th>
+                        <th>State Transition</th>
+                        <th>Details/Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in pipeline_events %}
+                    <tr>
+                        <td>{{ event.created_at|date:"Y-m-d H:i:s" }}</td>
+                        <td>
+                            <strong style="color: #475569;">{{ event.operator.username|default:"System" }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge badge-info">{{ event.action }}</span>
+                        </td>
+                        <td>
+                            <span style="font-size: 12px; font-family: monospace;">
+                                {{ event.previous_state }} &rarr; {{ event.new_state }}
+                            </span>
+                        </td>
+                        <td>
+                            <span style="color: #475569; font-size: 13px;">{{ event.note }}</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">
+                            <div style="padding: 24px; text-align: center; color: #94a3b8;">
+                                No manual pipeline actions have been recorded yet.
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 12px;">
+        <a href="{% url 'dashboard:leads' %}" class="btn">Back to Leads</a>
+    </div>
+</div>
+{% endblock %}

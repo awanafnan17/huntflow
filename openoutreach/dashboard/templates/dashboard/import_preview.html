@@ -1,0 +1,12 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Import Preview Results{% endblock %}
+{% block main_content %}
+<div class="card p-4">
+  <h2>Import Preview Results</h2>
+  <p>Valid: {{ results.valid }} | Invalid: {{ results.invalid }} | Duplicate: {{ results.duplicate }} | Suppressed: {{ results.suppressed }}</p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-success">Confirm & Import Valid Rows</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Verify Email Address{% endblock %}
+{% block main_content %}
+<div class="card p-4">
+  <h2>Verify Your Email</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label>Verification Token</label>
+      <input type="text" name="token" value="{{ token }}" class="form-control" placeholder="Enter token" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Confirm Email Verification</button>
+  </form>
+</div>
+{% endblock %}

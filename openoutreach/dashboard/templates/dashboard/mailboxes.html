@@ -1,0 +1,64 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Mailboxes{% endblock %}
+
+{% block page_title %}Mailboxes{% endblock %}
+{% block page_subtitle %}Manage SMTP sending inboxes and limits.{% endblock %}
+
+{% block main_content %}
+<div class="toolbar">
+    <div style="flex: 1;"></div>
+    <a href="{% url 'dashboard:mailbox_create' %}" class="btn btn-primary">Add Mailbox</a>
+</div>
+
+{% if messages %}
+    {% for msg in messages %}
+        <div class="alert alert-info" style="border-color: #bfdbfe; color: #1e3a8a; background-color: #eff6ff;">
+            {{ msg }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>SMTP Host</th>
+                <th>Port</th>
+                <th>Username</th>
+                <th>Password</th>
+                <th>From Address</th>
+                <th>Daily Limit</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in mailboxes %}
+            <tr>
+                <td>{{ item.mailbox.host }}</td>
+                <td>{{ item.mailbox.port }}</td>
+                <td style="font-weight: 600;">{{ item.mailbox.username }}</td>
+                <td>
+                    <span class="secret-masked">{{ item.masked_password }}</span>
+                </td>
+                <td>{{ item.mailbox.from_address }}</td>
+                <td>{{ item.mailbox.daily_limit }}</td>
+                <td style="text-align: right; white-space: nowrap;">
+                    <a href="{% url 'dashboard:mailbox_edit' item.mailbox.pk %}" class="btn" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;">Edit</a>
+                    <a href="{% url 'dashboard:mailbox_delete' item.mailbox.pk %}" class="btn" style="padding: 4px 8px; font-size: 12px; border-color: #ef4444; color: #ef4444;">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7">
+                    <div class="empty-state">
+                        <div class="empty-state-title">No mailboxes found</div>
+                        <p>Configure SMTP mailboxes to enable the email outreach channel.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

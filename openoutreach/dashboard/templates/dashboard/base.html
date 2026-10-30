@@ -1,0 +1,94 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard{% endblock %} - HuntFlow</title>
+    <link rel="stylesheet" href="{% static 'dashboard/style.css' %}">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">HuntFlow</div>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li class="menu-item">
+                    <a href="{% url 'dashboard:home' %}" class="menu-link {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'overview' %}active{% endif %}">
+                        🏠 Home
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{% url 'dashboard:campaigns' %}" class="menu-link {% if 'campaign' in request.resolver_match.url_name or request.resolver_match.url_name == 'outreach' or request.resolver_match.url_name == 'leads' or request.resolver_match.url_name == 'sales_crm' %}active{% endif %}">
+                        🎯 Outreach
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{% url 'dashboard:jobs' %}" class="menu-link {% if 'job' in request.resolver_match.url_name %}active{% endif %}">
+                        💼 Jobs
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{% url 'dashboard:operator_inbox' %}" class="menu-link {% if 'inbox' in request.resolver_match.url_name %}active{% endif %}" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>📥 Inbox</span>
+                        {% if inbox_unread_count > 0 %}
+                            <span class="badge badge-danger" style="margin-left: 8px; padding: 2px 6px; font-size: 10px; border-radius: 10px;">{{ inbox_unread_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{% url 'dashboard:action_logs' %}" class="menu-link {% if request.resolver_match.url_name == 'action_logs' or request.resolver_match.url_name == 'activity' %}active{% endif %}">
+                        📊 Activity
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{% url 'dashboard:settings' %}" class="menu-link {% if 'setting' in request.resolver_match.url_name or 'mailbox' in request.resolver_match.url_name or 'linkedin_account' in request.resolver_match.url_name or request.resolver_match.url_name in 'operations,daemon,readiness,diagnostics,tasks' %}active{% endif %}">
+                        ⚙️ Settings
+                    </a>
+                </li>
+                <li class="menu-item" style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;">
+                    <a href="{% url 'dashboard:targeting_assistant' %}" class="menu-link {% if 'targeting' in request.resolver_match.url_name %}active{% endif %}">
+                        🎯 Targeting AI
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{% url 'dashboard:chat_home' %}" class="menu-link {% if request.resolver_match.url_name == 'chat_home' %}active{% endif %}">
+                        🤖 AI Assistant
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <div class="main-wrapper">
+            <header class="header">
+                <div></div>
+                <div class="user-nav">
+                    <span class="user-username">{{ request.user.username }}</span>
+                    <a href="{% url 'dashboard:logout' %}" class="logout-btn">Log out</a>
+                </div>
+            </header>
+
+            <main class="content">
+                <div class="page-header">
+                    <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+                    <p class="page-subtitle">{% block page_subtitle %}{% endblock %}</p>
+                </div>
+                
+                {% if messages %}
+                    <div style="margin-bottom: 24px; display: flex; flex-direction: column; gap: 12px;">
+                        {% for message in messages %}
+                            <div class="card" style="border-left: 4px solid {% if message.tags == 'error' %}#ef4444{% elif message.tags == 'warning' %}#f59e0b{% else %}#10b981{% endif %}; background-color: {% if message.tags == 'error' %}#fef2f2{% elif message.tags == 'warning' %}#fffbeb{% else %}#f0fdf4{% endif %}; padding: 16px; border-radius: 6px; font-size: 14px; font-weight: bold; color: {% if message.tags == 'error' %}#991b1b{% elif message.tags == 'warning' %}#92400e{% else %}#166534{% endif %};">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                {% block main_content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+</body>
+</html>

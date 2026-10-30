@@ -1,0 +1,107 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Outreach{% endblock %}
+
+{% block page_title %}Outreach Campaigns{% endblock %}
+{% block page_subtitle %}Target audience, personalized message workflows, and prospect conversion tracking.{% endblock %}
+
+{% block main_content %}
+<!-- Top Actions & Create Button -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <span class="badge badge-info" style="font-size: 13px; padding: 6px 12px;">{{ campaigns|length }} Campaign(s)</span>
+    </div>
+    <a href="{% url 'dashboard:campaign_create' %}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+        + Create Campaign
+    </a>
+</div>
+
+<!-- Campaign Cards -->
+<div style="display: flex; flex-direction: column; gap: 20px;">
+    {% for item in campaigns %}
+        <div class="saas-card">
+            <div class="saas-card-header">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h3 style="font-size: 17px; font-weight: 700; color: #0f172a; margin: 0;">{{ item.campaign.name }}</h3>
+                        <span class="badge {{ item.effective_badge }}">{{ item.effective_status }}</span>
+                    </div>
+                    <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
+                        Targeting: {{ item.campaign.icp_title_keywords|default:"Tech Leaders & Decision Makers" }}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <a href="{% url 'dashboard:campaign_review' item.campaign.pk %}" class="btn btn-primary" style="font-size: 13px; padding: 6px 14px;">
+                        Review Prospects
+                    </a>
+                    <a href="{% url 'dashboard:campaign_edit' item.campaign.pk %}" class="btn" style="font-size: 13px; padding: 6px 12px;">
+                        Settings
+                    </a>
+                </div>
+            </div>
+
+            <!-- Pipeline Summary Tiles -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; margin: 16px 0;">
+                <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
+                    <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Ready Prospects</div>
+                    <div style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 2px;">{{ item.connect_pending }}</div>
+                </div>
+                <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
+                    <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Invitations Sent</div>
+                    <div style="font-size: 20px; font-weight: 800; color: #2563eb; margin-top: 2px;">{{ item.check_pending }}</div>
+                </div>
+                <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
+                    <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Accepted</div>
+                    <div style="font-size: 20px; font-weight: 800; color: #10b981; margin-top: 2px;">{{ item.connected_count }}</div>
+                </div>
+                <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
+                    <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Follow-ups</div>
+                    <div style="font-size: 20px; font-weight: 800; color: #8b5cf6; margin-top: 2px;">{{ item.followup_pending }}</div>
+                </div>
+                <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
+                    <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Replies</div>
+                    <div style="font-size: 20px; font-weight: 800; color: #047857; margin-top: 2px;">{{ item.replies_count|default:0 }}</div>
+                </div>
+            </div>
+
+            <!-- Expandable Advanced Technical Controls -->
+            <details style="margin-top: 12px; font-size: 13px; color: #64748b;">
+                <summary style="cursor: pointer; user-select: none; font-weight: 600; color: #475569;">
+                    ⚙️ Advanced Campaign Controls & Technical Stats
+                </summary>
+                <div style="padding: 12px; background: #f8fafc; border-radius: 8px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <span>Daily Limit: <strong>{% if item.campaign.daily_connect_limit %}{{ item.campaign.daily_connect_limit }}{% else %}Unlimited{% endif %}</strong> &nbsp;|&nbsp;</span>
+                        <span>Failed Tasks: <strong class="{% if item.failed_count > 0 %}text-danger{% endif %}">{{ item.failed_count }}</strong></span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        {% if item.campaign.is_active %}
+                            <form action="{% url 'dashboard:campaign_pause' item.campaign.pk %}" method="post" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn" style="font-size: 12px; padding: 4px 8px;">Pause Campaign</button>
+                            </form>
+                        {% else %}
+                            <form action="{% url 'dashboard:campaign_resume' item.campaign.pk %}" method="post" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary" style="font-size: 12px; padding: 4px 8px;">Resume Campaign</button>
+                            </form>
+                        {% endif %}
+                        <a href="{% url 'dashboard:campaign_delete' item.campaign.pk %}" class="btn" style="font-size: 12px; padding: 4px 8px; color: #ef4444; border-color: #fecaca;">Delete</a>
+                    </div>
+                </div>
+            </details>
+        </div>
+    {% empty %}
+        <div class="saas-card" style="text-align: center; padding: 48px 24px;">
+            <div style="font-size: 32px; margin-bottom: 12px;">🎯</div>
+            <h3 style="font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">No Campaigns Yet</h3>
+            <p style="font-size: 14px; color: #64748b; max-width: 480px; margin: 0 auto 20px auto;">
+                Create your first outreach campaign to define your target audience and let HuntFlow start finding prospects.
+            </p>
+            <a href="{% url 'dashboard:campaign_create' %}" class="btn btn-primary">
+                + Create First Campaign
+            </a>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

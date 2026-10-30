@@ -1,0 +1,128 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Jobs{% endblock %}
+
+{% block page_title %}Job Opportunities{% endblock %}
+{% block page_subtitle %}Discover matching roles, review AI-tailored applications, and submit Easy Apply applications.{% endblock %}
+
+{% block main_content %}
+<div style="max-width: 900px; display: flex; flex-direction: column; gap: 20px;">
+    
+    <!-- Top Action Bar & Tabs -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div class="saas-tabs" style="margin-bottom: 0;">
+            <a href="{% url 'career:job_list' %}?tab=matches" class="saas-tab {% if active_tab == 'matches' %}active{% endif %}">
+                Matches ({{ counts.matches|default:0 }})
+            </a>
+            <a href="{% url 'career:job_list' %}?tab=ready" class="saas-tab {% if active_tab == 'ready' %}active{% endif %}">
+                Ready to Apply ({{ counts.ready|default:0 }})
+            </a>
+            <a href="{% url 'career:job_list' %}?tab=needs_answer" class="saas-tab {% if active_tab == 'needs_answer' %}active{% endif %}">
+                Needs Your Answer ({{ counts.needs_answer|default:0 }})
+            </a>
+            <a href="{% url 'career:job_list' %}?tab=applied" class="saas-tab {% if active_tab == 'applied' %}active{% endif %}">
+                Applied ({{ counts.applied|default:0 }})
+            </a>
+        </div>
+        <a href="{% url 'career:job_add' %}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+            + Import Job Posting
+        </a>
+    </div>
+
+    <!-- Job Cards -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        {% for job in jobs %}
+        <div class="saas-card saas-card-hover">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">
+                        <a href="{% url 'career:job_detail' job.pk %}" style="color: #0f172a; text-decoration: none;">
+                            {{ job.title }}
+                        </a>
+                    </h3>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #475569; font-weight: 500;">
+                        {{ job.company }} &bull; <span style="color: #64748b;">{{ job.location|default:"Remote" }}</span>
+                    </p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    {% if job.application_status == 'submitted' and job.is_externally_confirmed %}
+                        <span class="badge badge-success">✓ Applied</span>
+                    {% elif job.application_status == 'submission_unverified' %}
+                        <span class="badge badge-warning">⚠️ Unverified</span>
+                    {% elif job.application_status == 'draft' %}
+                        <span class="badge badge-info">Ready to Apply</span>
+                    {% elif job.application_status == 'failed' %}
+                        <span class="badge badge-danger">Needs Answer</span>
+                    {% else %}
+                        <span class="badge badge-secondary">New Match</span>
+                    {% endif %}
+
+                    {% if job.match_score %}
+                        <span class="badge {% if job.match_score >= 80 %}badge-success{% elif job.match_score >= 50 %}badge-warning{% else %}badge-secondary{% endif %}" style="font-size: 13px; font-weight: 800;">
+                            {{ job.match_score }}% Match
+                        </span>
+                    {% endif %}
+
+                    {% if job.authorization_badge == 'SPONSORSHIP_REQUIRED' %}
+                        <span class="badge" style="background: #fef3c7; color: #92400e; font-size: 11px; font-weight: 600;">Sponsorship Required</span>
+                    {% elif job.authorization_badge == 'NOT_CURRENTLY_AUTHORIZED' %}
+                        <span class="badge" style="background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 600;">Not Currently Authorized</span>
+                    {% elif job.authorization_badge == 'CONFIRMED_AUTHORIZED' %}
+                        <span class="badge" style="background: #ecfdf5; color: #065f46; font-size: 11px; font-weight: 600;">Authorized</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if job.match_explanation %}
+                <div style="font-size: 12px; color: #047857; background: #f0fdf4; padding: 6px 10px; border-radius: 6px; margin: 10px 0 6px 0;">
+                    💡 <strong>Why it matches:</strong> {{ job.match_explanation|truncatewords:25 }}
+                </div>
+            {% endif %}
+
+            <div style="margin: 8px 0 12px 0; font-size: 13px; color: #475569; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5;">
+                {{ job.description }}
+            </div>
+
+            <div style="border-top: 1px solid #f1f5f9; padding-top: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #64748b; flex-wrap: wrap; gap: 8px;">
+                <span>Source: <strong style="color: #475569;">{{ job.source|title }}</strong></span>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    {% if job.job_url %}
+                        <a href="{{ job.job_url }}" target="_blank" rel="noopener noreferrer" style="color: #64748b; text-decoration: none;">
+                            Original Posting ↗
+                        </a>
+                    {% endif %}
+                    {% if job.application_status == 'failed' %}
+                        <a href="{% url 'career:job_detail' job.pk %}" class="btn btn-warning" style="font-size: 12px; padding: 4px 12px;">
+                            Answer Question →
+                        </a>
+                    {% elif job.application_status == 'draft' %}
+                        <a href="{% url 'career:job_detail' job.pk %}" class="btn btn-primary" style="font-size: 12px; padding: 4px 12px;">
+                            Apply Now →
+                        </a>
+                    {% else %}
+                        <a href="{% url 'career:job_detail' job.pk %}" class="btn" style="font-size: 12px; padding: 4px 12px;">
+                            Review →
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="saas-card" style="padding: 48px 24px; text-align: center;">
+            <div style="font-size: 32px; margin-bottom: 12px;">💼</div>
+            <h3 style="font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">No Jobs in this View</h3>
+            <p style="font-size: 14px; color: #64748b; max-width: 480px; margin: 0 auto 20px auto;">
+                {% if active_tab != 'matches' %}
+                    There are no jobs currently under the "{{ active_tab|title }}" category. Check the "Matches" tab or import a new role.
+                {% else %}
+                    Import job postings or let HuntFlow find openings matching your skills and experience.
+                {% endif %}
+            </p>
+            <a href="{% url 'career:job_add' %}" class="btn btn-primary">
+                + Import First Job
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Launch Run History{% endblock %}
+
+{% block page_title %}Launch Run History{% endblock %}
+{% block page_subtitle %}Audit log of previous outreach daemon launch starts, stops, restarts, and previews.{% endblock %}
+
+{% block main_content %}
+<div style="display: flex; flex-direction: column; gap: 24px;">
+
+    {# Filters Card #}
+    <div class="card">
+        <h3 class="card-title" style="margin-bottom: 12px; font-size: 14px;">Filter Launch Runs</h3>
+        <form method="get" style="margin: 0; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label for="status" style="font-size: 12px; color: #64748b;">Status:</label>
+                <select name="status" id="status" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background-color: white;">
+                    <option value="">All Statuses</option>
+                    <option value="started" {% if status_filter == 'started' %}selected{% endif %}>Started</option>
+                    <option value="running" {% if status_filter == 'running' %}selected{% endif %}>Running</option>
+                    <option value="stopped" {% if status_filter == 'stopped' %}selected{% endif %}>Stopped</option>
+                    <option value="blocked" {% if status_filter == 'blocked' %}selected{% endif %}>Blocked</option>
+                    <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Failed</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label for="mode" style="font-size: 12px; color: #64748b;">Mode:</label>
+                <select name="mode" id="mode" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background-color: white;">
+                    <option value="">All Modes</option>
+                    <option value="live" {% if mode_filter == 'live' %}selected{% endif %}>Live</option>
+                    <option value="preview" {% if mode_filter == 'preview' %}selected{% endif %}>Preview</option>
+                </select>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label for="source" style="font-size: 12px; color: #64748b;">Source:</label>
+                <select name="source" id="source" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background-color: white;">
+                    <option value="">All Sources</option>
+                    <option value="dashboard" {% if source_filter == 'dashboard' %}selected{% endif %}>Dashboard</option>
+                    <option value="cli" {% if source_filter == 'cli' %}selected{% endif %}>CLI</option>
+                    <option value="system" {% if source_filter == 'system' %}selected{% endif %}>System</option>
+                </select>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label for="campaign_id" style="font-size: 12px; color: #64748b;">Campaign Scope:</label>
+                <select name="campaign_id" id="campaign_id" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background-color: white;">
+                    <option value="">All Campaigns</option>
+                    {% for camp in campaigns %}
+                        <option value="{{ camp.id }}" {% if campaign_id_filter == camp.id %}selected{% endif %}>{{ camp.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="padding-top: 18px;">
+                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px;">Apply Filters</button>
+                <a href="{% url 'dashboard:launch_history' %}" class="btn" style="padding: 8px 16px; font-size: 13px; background-color: #f1f5f9; color: #475569; margin-left: 8px; text-decoration: none; display: inline-block;">Clear</a>
+            </div>
+        </form>
+    </div>
+
+    {# Launch History Table #}
+    <div class="card">
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Run ID</th>
+                        <th>Status</th>
+                        <th>Mode</th>
+                        <th>Source</th>
+                        <th>Operator</th>
+                        <th>PID</th>
+                        <th>Blockers/Warnings</th>
+                        <th>Started At</th>
+                        <th>Duration</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for run in runs %}
+                        <tr>
+                            <td><strong>#{{ run.id }}</strong></td>
+                            <td>
+                                <span class="badge {% if run.status == 'running' %}badge-success{% elif run.status == 'blocked' %}badge-danger{% elif run.status == 'stopped' %}badge-secondary{% else %}badge-info{% endif %}">
+                                    {{ run.status|upper }}
+                                </span>
+                            </td>
+                            <td><span style="font-size: 13px;">{{ run.mode }}</span></td>
+                            <td><span style="font-size: 13px;">{{ run.source }}</span></td>
+                            <td><span style="font-size: 13px;">{{ run.operator.username|default:"System" }}</span></td>
+                            <td><span style="font-size: 13px; font-family: monospace;">{{ run.daemon_pid|default:"-" }}</span></td>
+                            <td>
+                                <span style="font-size: 12px; color: #475569;">
+                                    B: <strong style="color: #ef4444;">{{ run.blocker_count }}</strong> | 
+                                    W: <strong style="color: #d97706;">{{ run.warning_count }}</strong>
+                                </span>
+                            </td>
+                            <td><span style="font-size: 12px; color: #64748b;">{{ run.started_at|date:"M d, H:i"|default:"-" }}</span></td>
+                            <td>
+                                <span style="font-size: 12px; color: #64748b;">
+                                    {% if run.ended_at and run.started_at %}
+                                        {{ run.ended_at|timesince:run.started_at }}
+                                    {% elif run.started_at %}
+                                        Active
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td style="text-align: right;">
+                                <a href="{% url 'dashboard:launch_history_detail' pk=run.id %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline;">Details &rarr;</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="10" style="text-align: center; color: #94a3b8; padding: 24px;">No launch runs match current filters.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

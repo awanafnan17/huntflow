@@ -1,0 +1,17 @@
+.git
+.env
+.env.*
+.venv
+__pycache__
+.pytest_cache
+data
+media
+private_media
+.browser_profile
+.private
+artifacts
+backups
+staticfiles
+*.log
+*.sqlite3
+*.db

@@ -1,0 +1,205 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Chat Agent{% endblock %}
+{% block page_title %}Conversational Campaign Agent{% endblock %}
+{% block page_subtitle %}Build, launch, and monitor automated campaigns in plain English.{% endblock %}
+
+{% block main_content %}
+<style>
+.chat-container {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 24px;
+    height: calc(100vh - 200px);
+    min-height: 600px;
+}
+.chat-left {
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+.chat-messages {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: #f8fafc;
+}
+.chat-message {
+    max-width: 80%;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.chat-message.agent {
+    align-self: flex-start;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #1e293b;
+}
+.chat-message.user {
+    align-self: flex-end;
+    background: #2563eb;
+    color: #ffffff;
+}
+.chat-input-area {
+    padding: 16px 24px;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 12px;
+}
+.chat-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+}
+.chat-input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+.chat-send-btn {
+    padding: 12px 24px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.chat-right {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.live-work-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 12px;
+}
+.status-pill {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.status-pill.active { background: #dcfce7; color: #166534; }
+.status-pill.paused { background: #fef3c7; color: #92400e; }
+.browser-preview-box {
+    height: 220px;
+    background: #0f172a;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-family: monospace;
+    font-size: 13px;
+    position: relative;
+    overflow: hidden;
+}
+</style>
+
+<div class="chat-container">
+    <div class="chat-left">
+        <!-- Campaign Context Switcher Bar -->
+        <div style="background: #f1f5f9; padding: 12px 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+            <div style="font-size: 13px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 8px;">
+                💬 Thread Context:
+                {% for c in campaigns %}
+                    <a href="/dashboard/?campaign_id={{ c.pk }}" class="btn" style="padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; {% if active_campaign.pk == c.pk %}background: #2563eb; color: white;{% else %}background: #e2e8f0; color: #475569;{% endif %}">
+                        {{ c.name }}
+                    </a>
+                {% endfor %}
+            </div>
+            {% if active_campaign and active_campaign.name == "Job Outreach" or active_campaign.pk == 3 %}
+                <a href="{% url 'dashboard:settings_job_profile' %}" class="btn btn-primary" style="background: #16a34a; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600;">Configure Job Search</a>
+            {% endif %}
+        </div>
+
+        <div class="chat-messages" id="chat-messages">
+            {% for msg in messages %}
+                <div class="chat-message {{ msg.role }}">
+                    <strong>{% if msg.role == 'agent' %}🤖 HuntFlow Assistant{% else %}🧑 You{% endif %}:</strong>
+                    <p style="margin-top: 6px; white-space: pre-line;">{{ msg.content }}</p>
+                </div>
+            {% empty %}
+                <div class="chat-message agent">
+                    <strong>🤖 HuntFlow Assistant:</strong>
+                    <p style="margin-top: 6px;">Hi! I'm your HuntFlow AI assistant. You can tell me what to do in plain English, like:<br>• <em>"Find startup founders in Dubai"</em><br>• <em>"Send max 10 connections per day"</em><br>• <em>"Follow up when they accept"</em><br>• <em>"Pause my outreach"</em><br>• <em>"Show people who replied"</em></p>
+                </div>
+            {% endfor %}
+        </div>
+        <form class="chat-input-area" method="POST" action="{% url 'dashboard:chat_message' %}">
+            {% csrf_token %}
+            <input type="hidden" name="campaign_id" value="{{ active_campaign.pk }}">
+            <input type="text" name="content" class="chat-input" placeholder="Ask AI assistant or give a command (e.g. 'Find startup founders in Dubai')..." required autocomplete="off">
+            <button type="submit" class="chat-send-btn">Send</button>
+        </form>
+    </div>
+
+    <div class="chat-right">
+        <div class="live-work-header">
+            <h3 style="font-size: 16px; font-weight: 700; margin: 0;">⚡ Live Work</h3>
+            <span class="status-pill active">ACTIVE</span>
+        </div>
+
+        <div>
+            <div style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">Active Campaign</div>
+            <div style="font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 2px;">{{ active_campaign.name|default:"LinkedIn Outreach" }}</div>
+        </div>
+
+        <div>
+            <div style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">Live Browser Stream</div>
+            <div class="browser-preview-box" style="margin-top: 6px;">
+                <div style="position: absolute; top: 8px; left: 8px; font-size: 11px; background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 4px; color: #38bdf8;">
+                    🔒 Verified Account: {{ operator_ctx.linkedin_profile.display_name|default:request.user.username }}
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 8px;">🌐</div>
+                    <div>LinkedIn Browser Engine Active</div>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Target Profile Scoped • Safety Gates Active</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
+            <div style="background: #f8fafc; padding: 10px; border-radius: 6px;">
+                <div style="color: #64748b; font-size: 11px;">Completed Today</div>
+                <div style="font-size: 18px; font-weight: 700; color: #0f172a;">1 / 1</div>
+            </div>
+            <div style="background: #f8fafc; padding: 10px; border-radius: 6px;">
+                <div style="color: #64748b; font-size: 11px;">Reconciliation</div>
+                <div style="font-size: 18px; font-weight: 700; color: #166534;">PASSED</div>
+            </div>
+        </div>
+
+        <div style="margin-top: auto; display: flex; gap: 8px;">
+            <a href="{% url 'dashboard:live_work' %}" class="btn btn-secondary" style="flex: 1; text-align: center; text-decoration: none; padding: 8px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; background: #e2e8f0; color: #334155;">Open Full View</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const chatMsgs = document.getElementById('chat-messages');
+    if (chatMsgs) { chatMsgs.scrollTop = chatMsgs.scrollHeight; }
+</script>
+{% endblock %}

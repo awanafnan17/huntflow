@@ -1,0 +1,190 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block page_title %}Hello, {{ user_name|default:"there" }} 👋{% endblock %}
+{% block page_subtitle %}Here is the current status of your automated outreach and career pipeline.{% endblock %}
+
+{% block main_content %}
+<div style="max-width: 900px; display: flex; flex-direction: column; gap: 24px;">
+
+    <!-- Needs Attention Banner (if any) -->
+    {% if needs_attention %}
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for item in needs_attention %}
+                <div style="background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; padding: 14px 18px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <div style="font-weight: 700; color: #92400e; font-size: 14px;">⚠️ {{ item.title }}</div>
+                        <div style="color: #78350f; font-size: 13px; margin-top: 2px;">{{ item.description }}</div>
+                    </div>
+                    <a href="{{ item.fix_url }}" class="btn btn-warning" style="font-size: 12px; font-weight: 700;">
+                        {{ item.fix_label }} →
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Master Action Banner -->
+    <div class="saas-card" style="background: {% if master_automation_enabled %}linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%){% else %}linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%){% endif %}; border: 1px solid {% if master_automation_enabled %}#86efac{% else %}#cbd5e1{% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a;">
+                        {% if master_automation_enabled %}⚡ 24/7 Automation is Active{% else %}⏸️ Automation is Paused{% endif %}
+                    </h2>
+                    <span class="badge {% if master_automation_enabled %}badge-success{% else %}badge-secondary{% endif %}" style="font-size: 12px;">
+                        {% if master_automation_enabled %}RUNNING{% else %}PAUSED{% endif %}
+                    </span>
+                </div>
+                <p style="margin: 6px 0 0 0; font-size: 13px; color: #475569;">
+                    {% if master_automation_enabled %}
+                        HuntFlow is working in the background: qualifying leads, sending invitations, and syncing candidate replies.
+                    {% else %}
+                        All outbound tasks are paused. Ready to launch whenever you click Start.
+                    {% endif %}
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 10px; align-items: center;">
+                {% if master_automation_enabled %}
+                    <form method="POST" action="{% url 'dashboard:automation_pause' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-warning" style="font-weight: 800; padding: 10px 20px; font-size: 14px;">
+                            ⏸️ Pause Automation
+                        </button>
+                    </form>
+                {% else %}
+                    <form method="POST" action="{% url 'dashboard:automation_start' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary" style="font-weight: 800; padding: 10px 24px; font-size: 14px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);">
+                            ⚡ START AUTOMATION
+                        </button>
+                    </form>
+                {% endif %}
+                <a href="{% url 'dashboard:activity' %}" class="btn" style="font-size: 13px; padding: 10px 16px;">
+                    View Activity →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account & Setup Status Summary -->
+    <div class="saas-card">
+        <div class="saas-card-header">
+            <div class="saas-card-title">⚙️ Setup & Account Status</div>
+            <a href="{% url 'dashboard:settings' %}" style="font-size: 12px; color: #2563eb; text-decoration: none; font-weight: 600;">Manage in Settings →</a>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+            <a href="{{ checklist.linkedin.url }}" class="saas-card saas-card-hover" style="text-decoration: none; color: inherit; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">LinkedIn Accounts</div>
+                <div style="font-size: 14px; font-weight: 700; margin: 4px 0; color: {% if checklist.linkedin.status == 'connected' %}#047857{% elif checklist.linkedin.status == 'attention' %}#b45309{% else %}#64748b{% endif %};">
+                    {{ checklist.linkedin.label }}
+                </div>
+                <div style="font-size: 12px; color: #64748b;">{{ checklist.linkedin.detail }}</div>
+            </a>
+
+            <a href="{{ checklist.email.url }}" class="saas-card saas-card-hover" style="text-decoration: none; color: inherit; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Email Mailbox</div>
+                <div style="font-size: 14px; font-weight: 700; margin: 4px 0; color: {% if checklist.email.status == 'connected' %}#047857{% else %}#64748b{% endif %};">
+                    {{ checklist.email.label }}
+                </div>
+                <div style="font-size: 12px; color: #64748b;">{{ checklist.email.detail }}</div>
+            </a>
+
+            <a href="{{ checklist.job_profile.url }}" class="saas-card saas-card-hover" style="text-decoration: none; color: inherit; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Job Application Profile</div>
+                <div style="font-size: 14px; font-weight: 700; margin: 4px 0; color: {% if checklist.job_profile.status == 'complete' %}#047857{% else %}#b45309{% endif %};">
+                    {{ checklist.job_profile.label }}
+                </div>
+                <div style="font-size: 12px; color: #64748b;">{{ checklist.job_profile.detail }}</div>
+            </a>
+
+            <a href="{{ checklist.automation.url }}" class="saas-card saas-card-hover" style="text-decoration: none; color: inherit; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Master Automation</div>
+                <div style="font-size: 14px; font-weight: 700; margin: 4px 0; color: {% if checklist.automation.status == 'running' %}#047857{% else %}#b45309{% endif %};">
+                    {{ checklist.automation.label }}
+                </div>
+                <div style="font-size: 12px; color: #64748b;">{{ checklist.automation.detail }}</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Today's Stats -->
+    <div>
+        <div style="font-size: 15px; font-weight: 800; color: #0f172a; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <span>📊 Today's Progress</span>
+            <span style="font-size: 12px; font-weight: 500; color: #64748b;">Updated in real time</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px;">
+            <div class="saas-card" style="padding: 16px 12px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Connections Sent</div>
+                <div style="font-size: 22px; font-weight: 800; color: #2563eb; margin-top: 4px;">{{ connections_sent_today|default:0 }}</div>
+            </div>
+
+            <div class="saas-card" style="padding: 16px 12px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Accepted</div>
+                <div style="font-size: 22px; font-weight: 800; color: #10b981; margin-top: 4px;">{{ accepted_today|default:0 }}</div>
+            </div>
+
+            <div class="saas-card" style="padding: 16px 12px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Follow-ups</div>
+                <div style="font-size: 22px; font-weight: 800; color: #8b5cf6; margin-top: 4px;">{{ followups_today|default:0 }}</div>
+            </div>
+
+            <div class="saas-card" style="padding: 16px 12px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Emails Sent</div>
+                <div style="font-size: 22px; font-weight: 800; color: #0284c7; margin-top: 4px;">{{ emails_sent_today|default:0 }}</div>
+            </div>
+
+            <div class="saas-card" style="padding: 16px 12px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Replies</div>
+                <div style="font-size: 22px; font-weight: 800; color: #059669; margin-top: 4px;">{{ replies_today|default:0 }}</div>
+            </div>
+
+            <div class="saas-card" style="padding: 16px 12px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Jobs Found</div>
+                <div style="font-size: 22px; font-weight: 800; color: #d97706; margin-top: 4px;">{{ jobs_found_today|default:0 }}</div>
+            </div>
+
+            <div class="saas-card" style="padding: 16px 12px; text-align: center;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Easy Apply Goal</span>
+                    <span class="badge {% if job_engine_status == 'TARGET_REACHED' %}badge-success{% elif job_engine_status == 'ACTIVE_SEARCHING' or job_engine_status == 'ACTIVE_APPLYING' %}badge-info{% elif job_engine_status == 'PAUSED' %}badge-warning{% else %}badge-neutral{% endif %}" style="font-size: 10px; padding: 2px 6px;">{{ job_engine_status }}</span>
+                </div>
+                <div style="font-size: 22px; font-weight: 800; color: #047857; margin-top: 4px;">{{ jobs_applied_today|default:0 }} <span style="font-size: 14px; font-weight: 600; color: #64748b;">/ {{ job_daily_target|default:50 }}</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5-Step Guided Setup Progress -->
+    <div class="saas-card">
+        <div class="saas-card-header">
+            <div>
+                <div class="saas-card-title">🚀 5-Step Guided Setup</div>
+                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Complete all steps to unlock full autonomous mode.</div>
+            </div>
+            <span class="badge badge-info">{{ completed_steps_count }}/{{ total_steps_count }} Complete ({{ wizard_percentage }}%)</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% for step in steps %}
+                <a href="{{ step.url }}" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; color: inherit;" class="saas-card-hover">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; {% if step.status == 'complete' %}background: #10b981; color: white;{% elif step.status == 'attention' %}background: #f59e0b; color: white;{% else %}background: #e2e8f0; color: #64748b;{% endif %}">
+                            {% if step.status == 'complete' %}✓{% else %}{{ step.num }}{% endif %}
+                        </div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 14px; color: #0f172a;">{{ step.title }}</div>
+                            <div style="font-size: 12px; color: #64748b;">{{ step.desc }}</div>
+                        </div>
+                    </div>
+                    <span style="font-size: 12px; font-weight: 600; color: #2563eb;">Open →</span>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

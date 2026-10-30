@@ -1,0 +1,69 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Workspace Members & Invitations{% endblock %}
+{% block main_content %}
+<div class="card p-4 mb-4">
+  <h2>Active Members ({{ workspace.name }})</h2>
+  <table class="table">
+    <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for m in members %}
+      <tr>
+        <td>{{ m.user.username }}</td>
+        <td>{{ m.user.email }}</td>
+        <td><span class="badge bg-primary">{{ m.role }}</span></td>
+        <td><span class="badge bg-success">{{ m.status }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card p-4">
+  <h2>Pending Invitations</h2>
+  {% if user_membership.role == 'owner' or user_membership.role == 'admin' %}
+  <form method="post" action="{% url 'dashboard:workspace_invite' workspace.id %}" class="mb-3">
+    {% csrf_token %}
+    <div class="row g-2">
+      <div class="col-md-5">
+        <input type="email" name="email" class="form-control" placeholder="colleague@company.com" required>
+      </div>
+      <div class="col-md-4">
+        <select name="role" class="form-select">
+          <option value="campaign_manager">Campaign Manager</option>
+          <option value="operator">Operator</option>
+          <option value="admin">Admin</option>
+          <option value="viewer">Viewer</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary w-100">Send Invite</button>
+      </div>
+    </div>
+  </form>
+  {% endif %}
+
+  <table class="table">
+    <thead><tr><th>Email</th><th>Role</th><th>Status</th><th>Expires At</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for inv in invitations %}
+      <tr>
+        <td>{{ inv.email }}</td>
+        <td>{{ inv.role }}</td>
+        <td><span class="badge bg-warning">{{ inv.status }}</span></td>
+        <td>{{ inv.expires_at }}</td>
+        <td>
+          {% if user_membership.role == 'owner' or user_membership.role == 'admin' %}
+          <form method="post" action="{% url 'dashboard:workspace_revoke_invite' workspace.id inv.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-danger">Revoke</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5">No pending invitations.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

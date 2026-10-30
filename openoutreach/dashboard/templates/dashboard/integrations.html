@@ -1,0 +1,151 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Integrations{% endblock %}
+{% block page_title %}Integrations Control Center{% endblock %}
+{% block page_subtitle %}Manage LinkedIn sender accounts, local AI models, email providers, and enrichment APIs.{% endblock %}
+
+{% block main_content %}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+    <!-- 1. LinkedIn Sender Accounts Card -->
+    {% if linkedin_profiles_list %}
+        {% for item in linkedin_profiles_list %}
+            <div class="card" style="background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-top: 4px solid {% if item.profile.session_status == 'valid' %}#10b981{% else %}#f59e0b{% endif %};">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+                    <div>
+                        <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 4px 0; color: #0f172a;">🔗 LinkedIn Account #{{ item.profile.id }}</h3>
+                        <span style="font-size: 12px; color: #64748b; font-weight: 600;">Default Sender Profile</span>
+                    </div>
+                    {% if item.profile.session_status == "valid" %}
+                        <span style="background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">CONNECTED / READY</span>
+                    {% elif item.profile.session_status == "checkpoint" %}
+                        <span style="background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">CHECKPOINT REQUIRED</span>
+                    {% else %}
+                        <span style="background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">NEEDS REAUTHENTICATION</span>
+                    {% endif %}
+                </div>
+
+                <div style="font-size: 13px; line-height: 1.6; color: #334155; margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 8px;">
+                    <div><strong>Username / Email:</strong> {{ item.profile.linkedin_username }}</div>
+                    <div><strong>Session Status:</strong> <span style="font-weight: 700; color: {% if item.profile.session_status == 'valid' %}#059669{% else %}#dc2626{% endif %};">{{ item.profile.session_status|upper }}</span></div>
+                    <div><strong>Credential Fingerprint:</strong> <code style="font-size: 11px; color: #475569;">{{ item.fingerprint }}</code></div>
+                    <div><strong>Last Validated:</strong> {{ item.profile.last_validated_at|date:"Y-m-d H:i"|default:"Just now" }}</div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <a href="{% url 'dashboard:linkedin_account_session' item.profile.id %}" style="display: inline-block; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: 700; background-color: #2563eb; color: white; border-radius: 6px; text-align: center; flex: 1;">
+                        Manage Session &rarr;
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- 2. Local Ollama LLM Card -->
+    <div class="card" style="background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-top: 4px solid {% if ollama_connected %}#10b981{% else %}#ef4444{% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+            <div>
+                <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 4px 0; color: #0f172a;">🤖 Local Ollama LLM</h3>
+                <span style="font-size: 12px; color: #64748b; font-weight: 600;">Personalized AI Message Generator</span>
+            </div>
+            {% if ollama_connected %}
+                <span style="background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">CONNECTED</span>
+            {% else %}
+                <span style="background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">OFFLINE</span>
+            {% endif %}
+        </div>
+
+        <div style="font-size: 13px; line-height: 1.6; color: #334155; margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 8px;">
+            <div><strong>Active Model:</strong> <code style="font-size: 12px; color: #2563eb; font-weight: 700;">{{ ollama_model }}</code></div>
+            <div><strong>Endpoint URL:</strong> <code style="font-size: 11px; color: #475569;">{{ ollama_endpoint }}</code></div>
+            <div><strong>Privacy:</strong> Local execution (No external API tokens)</div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <a href="{% url 'dashboard:settings_llm' %}" style="display: inline-block; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: 700; background-color: #475569; color: white; border-radius: 6px; text-align: center; flex: 1;">
+                Configure LLM &rarr;
+            </a>
+        </div>
+    </div>
+
+    <!-- 3. Gmail OAuth Card -->
+    <div class="card" style="background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-top: 4px solid {% if google_accounts %}#10b981{% else %}#64748b{% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+            <div>
+                <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 4px 0; color: #0f172a;">📧 Gmail / Email Sender</h3>
+                <span style="font-size: 12px; color: #64748b; font-weight: 600;">Google Workspace OAuth 2.0</span>
+            </div>
+            {% if google_accounts %}
+                <span style="background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">CONNECTED</span>
+            {% else %}
+                <span style="background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">NOT CONNECTED</span>
+            {% endif %}
+        </div>
+
+        <div style="font-size: 13px; line-height: 1.6; color: #334155; margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 8px;">
+            {% if google_accounts %}
+                {% for acc in google_accounts %}
+                    <div style="font-weight: 600; color: #059669;">✓ Connected Account: {{ acc.email }}</div>
+                {% endfor %}
+            {% else %}
+                <div style="color: #64748b;">Connect your Gmail account to automate email outreach and track prospect responses.</div>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <a href="{% url 'dashboard:gmail_connect' %}" style="display: inline-block; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: 700; background-color: #2563eb; color: white; border-radius: 6px; text-align: center; flex: 1;">
+                Connect Gmail &rarr;
+            </a>
+            <a href="{% url 'dashboard:email_hub' %}" style="display: inline-block; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: 700; background-color: #f1f5f9; color: #334155; border-radius: 6px; text-align: center; flex: 1;">
+                Email Hub
+            </a>
+        </div>
+    </div>
+
+    <!-- 4. BetterContact API Card -->
+    <div class="card" style="background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-top: 4px solid {% if bettercontact_configured %}#10b981{% else %}#f59e0b{% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+            <div>
+                <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 4px 0; color: #0f172a;">⚡ BetterContact API</h3>
+                <span style="font-size: 12px; color: #64748b; font-weight: 600;">Work Email Enrichment Engine</span>
+            </div>
+            {% if bettercontact_configured %}
+                <span style="background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">READY / CONFIGURED</span>
+            {% else %}
+                <span style="background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">NOT CONFIGURED</span>
+            {% endif %}
+        </div>
+
+        <div style="font-size: 13px; line-height: 1.6; color: #334155; margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 8px;">
+            <div>Enriches lead profiles with verified professional email addresses and phone numbers.</div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <a href="{% url 'dashboard:settings_bettercontact' %}" style="display: inline-block; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: 700; background-color: #475569; color: white; border-radius: 6px; text-align: center; flex: 1;">
+                Configure API &rarr;
+            </a>
+        </div>
+    </div>
+
+    <!-- 5. Web Search / Enrichment Provider Card -->
+    <div class="card" style="background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-top: 4px solid #10b981;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+            <div>
+                <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 4px 0; color: #0f172a;">🔍 Web Search & Intelligence</h3>
+                <span style="font-size: 12px; color: #64748b; font-weight: 600;">Automated Lead Context Enrichment</span>
+            </div>
+            <span style="background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">CONNECTED / READY</span>
+        </div>
+
+        <div style="font-size: 13px; line-height: 1.6; color: #334155; margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 8px;">
+            <div>Queries live company data, tech stacks, and job postings for hyper-targeted personalized outreach.</div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <a href="{% url 'dashboard:settings_system' %}" style="display: inline-block; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: 700; background-color: #475569; color: white; border-radius: 6px; text-align: center; flex: 1;">
+                System Settings &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

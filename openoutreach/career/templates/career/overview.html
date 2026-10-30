@@ -1,0 +1,267 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Career Portal & Candidate Profile{% endblock %}
+
+{% block page_title %}Career Portal{% endblock %}
+{% block page_subtitle %}Manage your verified candidate profile, upload documents securely, review version history, and approve drafts.{% endblock %}
+
+{% block main_content %}
+<div style="display: flex; flex-direction: column; gap: 24px; max-width: 1000px;">
+    
+    {# 1. Profile Core Details #}
+    <div class="card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 16px;">
+            <div>
+                <h2 style="margin: 0; font-size: 20px; color: #1e293b;">Candidate Profile</h2>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">This profile serves as the single source of truth for all tailored applications.</p>
+            </div>
+            <div>
+                <a href="{% url 'career:profile_edit' %}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+                    Edit Profile Details
+                </a>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+            <div>
+                <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">Full Name</span>
+                <span style="font-size: 15px; font-weight: 600; color: #334155;">{{ profile.full_name }}</span>
+            </div>
+            <div>
+                <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">Email Address</span>
+                <span style="font-size: 15px; font-weight: 600; color: #334155;">{{ profile.email }}</span>
+            </div>
+            <div>
+                <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">Phone Number</span>
+                <span style="font-size: 15px; font-weight: 600; color: #334155;">{{ profile.phone|default:"Not specified" }}</span>
+            </div>
+            <div>
+                <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">LinkedIn URL</span>
+                {% if profile.linkedin_url %}
+                    <a href="{{ profile.linkedin_url }}" target="_blank" style="font-size: 15px; font-weight: 600; color: #2563eb; text-decoration: underline;">
+                        {{ profile.linkedin_url }}
+                    </a>
+                {% else %}
+                    <span style="font-size: 15px; font-weight: 600; color: #64748b;">Not specified</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if profile.summary %}
+        <div style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 16px;">
+            <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">Career Summary</span>
+            <p style="margin: 0; font-size: 14px; color: #334155; line-height: 1.6; white-space: pre-wrap;">{{ profile.summary }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {# Active Applications Card #}
+    <div class="card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 16px; color: #1e293b;">Active Applications & Drafts</h3>
+            <a href="{% url 'career:job_list' %}" class="btn" style="padding: 4px 10px; font-size: 12px;">
+                Explore Jobs
+            </a>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for app in applications %}
+            <div class="card" style="padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                <div>
+                    <strong style="font-size: 14px; color: #1e293b;">{{ app.job.title }}</strong>
+                    <span style="color: #64748b;"> at {{ app.job.company }}</span>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Started {{ app.created_at|date:"Y-m-d H:i" }} UTC</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span class="badge {% if app.status == 'submitted' %}badge-success{% elif app.status == 'approved' %}badge-info{% elif app.status == 'failed' %}badge-error{% else %}badge-warning{% endif %}" style="font-size: 11px;">
+                        {{ app.get_status_display }}
+                    </span>
+                    <a href="{% url 'career:application_review' app.pk %}" class="btn btn-primary" style="padding: 4px 10px; font-size: 11px;">
+                        {% if app.status == 'draft' %}Review & Edit{% else %}View Details{% endif %} &rarr;
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align: center; padding: 24px; color: #64748b; font-size: 13px;">
+                No applications started yet. Go to <a href="{% url 'career:job_list' %}" style="color: #2563eb; text-decoration: underline;">Jobs list</a> to customize a resume and cover letter for target jobs.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px;">
+        
+        {# 2. Document Manager #}
+        <div class="card" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px;">
+                <h3 style="margin: 0; font-size: 16px; color: #1e293b;">Candidate Documents</h3>
+                <div style="display: flex; gap: 8px;">
+                    <a href="{% url 'career:raw_cv_input' %}" class="btn" style="padding: 4px 10px; font-size: 12px; background-color: #64748b; color: white; border-radius: 4px;">
+                        Paste Raw CV
+                    </a>
+                    <a href="{% url 'career:document_upload' %}" class="btn" style="padding: 4px 10px; font-size: 12px;">
+                        Upload Document
+                    </a>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                {% for doc in documents %}
+                <div class="card" style="padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <strong style="font-size: 14px; color: #334155;">{{ doc.name }}</strong>
+                            <span class="badge badge-info" style="font-size: 11px; margin-left: 6px;">{{ doc.get_document_type_display }}</span>
+                        </div>
+                        <span style="font-size: 11px; color: #64748b;">Uploaded {{ doc.created_at|date:"Y-m-d" }}</span>
+                    </div>
+
+                    {% if doc.versions.exists %}
+                    <div style="margin-top: 8px; border-top: 1px dashed #cbd5e1; padding-top: 8px; display: flex; flex-direction: column; gap: 6px;">
+                        {% for ver in doc.versions.all %}
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+                            <span style="color: #475569;">v{{ ver.version_number }} ({{ ver.file_size|filesizeformat }})</span>
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <a href="{% url 'career:document_download' ver.pk %}" style="color: #475569; text-decoration: underline;">
+                                    Download
+                                </a>
+                                {% if doc.status == "active" %}
+                                <a href="{% url 'career:document_parse' ver.pk %}" style="color: #2563eb; font-weight: bold; text-decoration: underline;">
+                                    Parse & Review &rarr;
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div style="text-align: center; padding: 24px; color: #64748b; font-size: 13px;">
+                    No documents uploaded yet. Upload a CV to get started.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# 3. Profile Version History & Approval #}
+        <div class="card" style="padding: 24px;">
+            <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">Profile Version History</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                {% for ver in versions %}
+                <div class="card" style="padding: 16px; border: 1px solid #e2e8f0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <strong style="font-size: 14px; color: #1e293b;">Version #{{ ver.version_number }}</strong>
+                        {% if ver.approval %}
+                            <span class="badge badge-success" style="font-size: 11px;">Approved ✅</span>
+                        {% else %}
+                            <span class="badge badge-warning" style="font-size: 11px;">Draft 📝</span>
+                        {% endif %}
+                    </div>
+
+                    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">
+                        Generated on {{ ver.created_at|date:"Y-m-d H:i" }} UTC
+                        {% if ver.created_by %}by {{ ver.created_by.username }}{% endif %}
+                    </div>
+
+                    {# Approval workflow UI #}
+                    {% if not ver.approval and perms.career.approve_profile %}
+                    <div style="margin-top: 12px; padding: 12px; background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px;">
+                        <form method="POST" action="{% url 'career:profile_approve' ver.pk %}">
+                            {% csrf_token %}
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <label style="font-size: 11px; font-weight: bold; color: #b45309;">Add Approval Note (optional):</label>
+                                <input type="text" name="note" placeholder="e.g. Verified facts match initial CV" class="input-text" style="padding: 6px; font-size: 12px; width: 100%;">
+                                <button type="submit" class="btn btn-primary" style="padding: 6px 12px; font-size: 11px; margin-top: 4px; align-self: flex-start;">
+                                    Approve Version #{{ ver.version_number }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    {% elif ver.approval %}
+                    <div style="margin-top: 8px; font-size: 12px; padding: 8px; background-color: #f0fdf4; border-radius: 4px; border: 1px solid #dcfce7; color: #166534;">
+                        <strong>Approved by:</strong> {{ ver.approval.approved_by.username }} at {{ ver.approval.approved_at|date:"Y-m-d" }}
+                        {% if ver.approval.approval_note %}
+                            <br><strong>Note:</strong> {{ ver.approval.approval_note }}
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div style="text-align: center; padding: 24px; color: #64748b; font-size: 13px;">
+                    No profile versions found.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {# 3.5 Extraction Records #}
+    <div class="card" style="padding: 24px;">
+        <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">CV / Resume Parsing Runs</h3>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for record in extractions %}
+            <div class="card" style="padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                <div>
+                    <strong>{{ record.get_source_type_display }} Extraction</strong>
+                    <span style="font-size: 11px; color: #64748b; margin-left: 8px;">Run at {{ record.extracted_at|date:"Y-m-d H:i" }} UTC</span>
+                    {% if record.document_version %}
+                    <div style="font-size: 11px; color: #475569; margin-top: 4px;">Source File: {{ record.document_version.original_filename }} (v{{ record.document_version.version_number }})</div>
+                    {% endif %}
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    {% if record.status == "pending" %}
+                    <span class="badge badge-warning" style="font-size: 11px;">Pending Review 📝</span>
+                    <a href="{% url 'career:extraction_review' record.pk %}" class="btn btn-primary" style="padding: 4px 10px; font-size: 11px;">
+                        Review Drafts &rarr;
+                    </a>
+                    {% elif record.status == "applied" %}
+                    <span class="badge badge-success" style="font-size: 11px;">Applied ✅</span>
+                    {% else %}
+                    <span class="badge badge-error" style="font-size: 11px;">Discarded ❌</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align: center; padding: 24px; color: #64748b; font-size: 13px;">
+                No parser runs recorded yet. Upload a CV or paste raw text above to extract profile facts.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# 4. Audit Trails #}
+    {% if perms.career.view_audit_history or profile.user == request.user %}
+    <div class="card" style="padding: 24px;">
+        <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">Candidate Security Audit Logs</h3>
+        <div style="max-height: 250px; overflow-y: auto;">
+            <table class="data-table" style="font-size: 12px;">
+                <thead>
+                    <tr>
+                        <th style="padding: 8px;">Timestamp</th>
+                        <th style="padding: 8px;">Event Type</th>
+                        <th style="padding: 8px;">Description</th>
+                        <th style="padding: 8px;">IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in audit_events %}
+                    <tr>
+                        <td style="padding: 8px; white-space: nowrap;">{{ log.timestamp|date:"Y-m-d H:i:s" }} UTC</td>
+                        <td style="padding: 8px; font-weight: bold;">{{ log.event_type }}</td>
+                        <td style="padding: 8px; color: #475569;">{{ log.description }}</td>
+                        <td style="padding: 8px;">{{ log.ip_address|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 12px; color: #64748b;">No security audit events recorded.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

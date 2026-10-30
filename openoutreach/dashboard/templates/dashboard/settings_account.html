@@ -1,0 +1,34 @@
+{% extends 'dashboard/settings_base.html' %}
+
+{% block settings_title %}My Account - Settings{% endblock %}
+{% block settings_page_title %}My Account{% endblock %}
+{% block settings_page_subtitle %}Your account details, active workspace, and sign-in credentials.{% endblock %}
+
+{% block settings_content %}
+<div style="max-width: 680px;">
+    <div class="saas-card" style="margin-bottom: 24px;">
+        <div class="saas-card-header">
+            <div class="saas-card-title">👤 User Profile</div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+                <span style="font-weight: 600; color: #64748b;">Username</span>
+                <span style="font-weight: 700; color: #0f172a;">{{ user.username }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+                <span style="font-weight: 600; color: #64748b;">Email Address</span>
+                <span style="font-weight: 600; color: #0f172a;">{{ user.email|default:"Not configured" }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+                <span style="font-weight: 600; color: #64748b;">Role</span>
+                <span class="badge badge-info">{% if user.is_superuser %}Admin / Superuser{% elif user.is_staff %}Staff{% else %}Operator{% endif %}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="font-weight: 600; color: #64748b;">Workspace</span>
+                <span style="font-weight: 700; color: #2563eb;">{{ workspace.name|default:"Default Workspace" }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

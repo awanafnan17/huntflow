@@ -1,0 +1,336 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Settings → Job Profile{% endblock %}
+{% block page_title %}Job Application Profile & Automated Screening Answers{% endblock %}
+{% block page_subtitle %}The single source of truth for your factual job application preferences, screening answers, and work eligibility.{% endblock %}
+
+{% block main_content %}
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 30px;">
+    <!-- Profile Edit Form -->
+    <div class="card" style="background: #ffffff; padding: 28px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <form method="POST" action="{% url 'dashboard:settings_job_profile' %}">
+            {% csrf_token %}
+
+            <!-- SECTION 1: PERSONAL -->
+            <div style="margin-bottom: 28px;">
+                <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <span>👤</span> Personal Details
+                </h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Full Name</label>
+                        <input type="text" name="full_name" value="{{ application_profile.full_name|default:candidate_profile.full_name }}" placeholder="e.g. Alex Morgan" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Email</label>
+                        <input type="email" name="email" value="{{ application_profile.email|default:candidate_profile.email }}" placeholder="e.g. candidate-2@example.com" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Phone Number</label>
+                        <input type="text" name="phone" value="{{ application_profile.phone }}" placeholder="{% if not application_profile.phone %}Needs your answer{% endif %}" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">City</label>
+                        <input type="text" name="city" value="{{ application_profile.city }}" placeholder="{% if not application_profile.city %}Needs your answer{% endif %}" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Country</label>
+                        <input type="text" name="country" value="{{ application_profile.country }}" placeholder="{% if not application_profile.country %}Needs your answer{% endif %}" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">LinkedIn Profile URL</label>
+                    <input type="url" name="linkedin_url" value="{{ application_profile.linkedin_url }}" placeholder="https://www.linkedin.com/in/..." style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+                </div>
+            </div>
+
+            <!-- SECTION 2: WORK ELIGIBILITY -->
+            <div style="margin-bottom: 28px;">
+                <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <span>🛂</span> Work Eligibility & Sponsorship
+                </h3>
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Where are you legally authorized to work? (comma separated, e.g. US, UK, PK)</label>
+                    <p style="font-size: 11px; color: #64748b; margin: 0 0 6px 0;">This defines your legal work authorization, separate from where you want HuntFlow to search for jobs.</p>
+                    <input type="text" name="authorized_countries" value="{{ application_profile.authorized_countries|join:', ' }}" placeholder="{% if not application_profile.authorized_countries %}Needs your answer{% endif %}" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Need Visa Sponsorship Now?</label>
+                        <select name="visa_sponsorship_now" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value="unknown" {% if application_profile.visa_sponsorship_now == "unknown" %}selected{% endif %}>Needs your answer</option>
+                            <option value="no" {% if application_profile.visa_sponsorship_now == "no" %}selected{% endif %}>No</option>
+                            <option value="yes" {% if application_profile.visa_sponsorship_now == "yes" %}selected{% endif %}>Yes</option>
+                            <option value="depends" {% if application_profile.visa_sponsorship_now == "depends" %}selected{% endif %}>Depends on role</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Need Sponsorship in Future?</label>
+                        <select name="visa_sponsorship_future" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value="unknown" {% if application_profile.visa_sponsorship_future == "unknown" %}selected{% endif %}>Needs your answer</option>
+                            <option value="no" {% if application_profile.visa_sponsorship_future == "no" %}selected{% endif %}>No</option>
+                            <option value="yes" {% if application_profile.visa_sponsorship_future == "yes" %}selected{% endif %}>Yes</option>
+                            <option value="depends" {% if application_profile.visa_sponsorship_future == "depends" %}selected{% endif %}>Depends on role</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Relocation Willingness</label>
+                        <select name="relocation_willingness" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value="unknown" {% if application_profile.relocation_willingness == "unknown" %}selected{% endif %}>Needs your answer</option>
+                            <option value="no" {% if application_profile.relocation_willingness == "no" %}selected{% endif %}>No</option>
+                            <option value="yes" {% if application_profile.relocation_willingness == "yes" %}selected{% endif %}>Yes</option>
+                            <option value="depends" {% if application_profile.relocation_willingness == "depends" %}selected{% endif %}>Depends on role</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: JOB SEARCH LOCATIONS -->
+            <div style="margin-bottom: 28px;">
+                <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <span>📍</span> Job Search Locations & Targeting
+                </h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Where should HuntFlow look for jobs? (Included Locations)</label>
+                        <p style="font-size: 11px; color: #64748b; margin: 0 0 6px 0;">e.g. Australia, New Zealand, Europe, United Kingdom, Remote Worldwide</p>
+                        <input type="text" name="target_locations" value="{{ application_profile.target_locations|join:', ' }}" placeholder="Australia, New Zealand, Europe, Remote Worldwide" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Excluded Job Locations (Exclusion Wins)</label>
+                        <p style="font-size: 11px; color: #64748b; margin: 0 0 6px 0;">e.g. Germany, United States (explicit exclusions override inclusions)</p>
+                        <input type="text" name="excluded_locations" value="{{ application_profile.excluded_locations|join:', ' }}" placeholder="Germany, United States" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Application Strategy</label>
+                        <select name="application_strategy" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value="INTERVIEW_FIRST_SPONSORSHIP" {% if application_profile.application_strategy == "INTERVIEW_FIRST_SPONSORSHIP" or not application_profile.application_strategy %}selected{% endif %}>Interview First — Sponsorship / Authorization Later</option>
+                            <option value="STRICT_AUTHORIZATION" {% if application_profile.application_strategy == "STRICT_AUTHORIZATION" %}selected{% endif %}>Strict Work Authorization Only</option>
+                        </select>
+                        <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0;">HuntFlow may apply to suitable jobs outside your current work authorization. It will always answer authorization and sponsorship questions truthfully.</p>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Global Job Search</label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 14px; color: #334155; cursor: pointer;">
+                            <input type="checkbox" name="search_worldwide" {% if application_profile.search_worldwide %}checked{% endif %} style="width: 16px; height: 16px; accent-color: #2563eb;">
+                            <span>Search Worldwide (Target opportunities globally; explicit exclusions still win)</span>
+                        </label>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Remote Job Policy</label>
+                        <select name="remote_mode" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value="allow_all" {% if application_profile.remote_mode == "allow_all" %}selected{% endif %}>Allow all matching remote positions</option>
+                            <option value="worldwide_only" {% if application_profile.remote_mode == "worldwide_only" %}selected{% endif %}>Worldwide remote only</option>
+                            <option value="deny" {% if application_profile.remote_mode == "deny" %}selected{% endif %}>Deny remote positions</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Unknown Job Location Handling</label>
+                        <select name="unknown_location_handling" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value="deny" {% if application_profile.unknown_location_handling == "deny" %}selected{% endif %}>Deny / Block auto-application (Conservative)</option>
+                            <option value="review" {% if application_profile.unknown_location_handling == "review" %}selected{% endif %}>Flag for operator review</option>
+                            <option value="allow" {% if application_profile.unknown_location_handling == "allow" %}selected{% endif %}>Allow unknown location</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4: WORK MODE & TRAVEL -->
+            <div style="margin-bottom: 28px;">
+                <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <span>🏢</span> Work Mode, Travel & Background Check
+                </h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Remote Work</label>
+                        <select name="remote_willingness" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value="unknown" {% if application_profile.remote_willingness == "unknown" %}selected{% endif %}>Needs your answer</option>
+                            <option value="yes" {% if application_profile.remote_willingness == "yes" %}selected{% endif %}>Yes</option>
+                            <option value="no" {% if application_profile.remote_willingness == "no" %}selected{% endif %}>No</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Hybrid Work</label>
+                        <select name="hybrid_willingness" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value="unknown" {% if application_profile.hybrid_willingness == "unknown" %}selected{% endif %}>Needs your answer</option>
+                            <option value="yes" {% if application_profile.hybrid_willingness == "yes" %}selected{% endif %}>Yes</option>
+                            <option value="no" {% if application_profile.hybrid_willingness == "no" %}selected{% endif %}>No</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Onsite Work</label>
+                        <select name="onsite_willingness" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value="unknown" {% if application_profile.onsite_willingness == "unknown" %}selected{% endif %}>Needs your answer</option>
+                            <option value="depends" {% if application_profile.onsite_willingness == "depends" %}selected{% endif %}>Depends</option>
+                            <option value="yes" {% if application_profile.onsite_willingness == "yes" %}selected{% endif %}>Yes</option>
+                            <option value="no" {% if application_profile.onsite_willingness == "no" %}selected{% endif %}>No</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Business Travel</label>
+                        <select name="travel_willingness" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value="unknown" {% if application_profile.travel_willingness == "unknown" %}selected{% endif %}>Needs your answer</option>
+                            <option value="depends" {% if application_profile.travel_willingness == "depends" %}selected{% endif %}>Depends</option>
+                            <option value="yes" {% if application_profile.travel_willingness == "yes" %}selected{% endif %}>Yes</option>
+                            <option value="no" {% if application_profile.travel_willingness == "no" %}selected{% endif %}>No</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Lawful Employment Background Check Consent</label>
+                    <select name="background_check_willingness" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: white;">
+                        <option value="unknown" {% if application_profile.background_check_willingness == "unknown" %}selected{% endif %}>Needs your answer</option>
+                        <option value="yes" {% if application_profile.background_check_willingness == "yes" %}selected{% endif %}>Yes (Consent to lawful background checks)</option>
+                        <option value="ask_each_time" {% if application_profile.background_check_willingness == "ask_each_time" %}selected{% endif %}>Ask Me Each Time</option>
+                        <option value="no" {% if application_profile.background_check_willingness == "no" %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- SECTION 4: AVAILABILITY & SALARY -->
+            <div style="margin-bottom: 28px;">
+                <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <span>💰</span> Availability & Salary Preferences
+                </h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Notice Period</label>
+                        <input type="text" name="notice_period" value="{{ application_profile.notice_period }}" placeholder="e.g. 2 weeks / Immediately" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Earliest Start Date Rule</label>
+                        <input type="text" name="earliest_start_date" value="{{ application_profile.earliest_start_date }}" placeholder="e.g. Immediately / 2 weeks from offer" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Currency</label>
+                        <input type="text" name="currency" value="{{ application_profile.currency|default:'USD' }}" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Minimum Salary</label>
+                        <input type="number" name="minimum_salary" value="{{ application_profile.minimum_salary|default:'' }}" placeholder="{% if not application_profile.minimum_salary %}Needs answer{% endif %}" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Target Salary</label>
+                        <input type="number" name="target_salary" value="{{ application_profile.target_salary|default:'' }}" placeholder="{% if not application_profile.target_salary %}Needs answer{% endif %}" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Salary Period</label>
+                        <select name="salary_period" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value="annual" {% if application_profile.salary_period == "annual" %}selected{% endif %}>Annual (yr)</option>
+                            <option value="monthly" {% if application_profile.salary_period == "monthly" %}selected{% endif %}>Monthly (mo)</option>
+                            <option value="hourly" {% if application_profile.salary_period == "hourly" %}selected{% endif %}>Hourly (hr)</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="background: #f8fafc; padding: 10px 14px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <label style="font-size: 13px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" name="allow_automatic_salary" {% if application_profile.allow_automatic_salary %}checked{% endif %}>
+                        <span>Allow HuntFlow to answer salary questions automatically using my approved range</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Submit Button Actions -->
+            <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #f1f5f9; padding-top: 16px;">
+                <button type="submit" name="action" value="save" class="btn btn-secondary" style="background: #f1f5f9; color: #334155; padding: 10px 20px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 600; font-size: 14px; cursor: pointer;">
+                    💾 Save Job Profile
+                </button>
+                <button type="submit" name="action" value="confirm_for_applications" class="btn btn-primary" style="background: #2563eb; color: white; padding: 10px 24px; border-radius: 8px; border: none; font-weight: 600; font-size: 14px; cursor: pointer;">
+                    ✅ Confirm for Applications
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Right Side: Readiness & Answer Bank Summary -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Application Profile Readiness Card -->
+        <div class="card" style="background: #ffffff; padding: 22px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <h4 style="font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+                <span>🎯 Profile Readiness</span>
+                <span class="badge" style="background: {% if readiness.is_ready %}#dcfce7; color: #166534;{% else %}#fee2e2; color: #991b1b;{% endif %} padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 700;">
+                    {{ readiness.overall_score }}%
+                </span>
+            </h4>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #475569;">Personal Details</span>
+                    <span style="font-weight: 600; color: {% if readiness.personal_score >= 80 %}#16a34a{% else %}#dc2626{% endif %};">{{ readiness.personal_score }}% ({{ readiness.personal_status }})</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #475569;">Work Eligibility</span>
+                    <span style="font-weight: 600; color: {% if readiness.eligibility_score >= 75 %}#16a34a{% else %}#dc2626{% endif %};">{{ readiness.eligibility_score }}% ({{ readiness.eligibility_status }})</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #475569;">Work Preferences</span>
+                    <span style="font-weight: 600; color: {% if readiness.preferences_score >= 75 %}#16a34a{% else %}#dc2626{% endif %};">{{ readiness.preferences_score }}% ({{ readiness.preferences_status }})</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #475569;">Salary Preferences</span>
+                    <span style="font-weight: 600; color: {% if readiness.salary_score >= 66 %}#16a34a{% else %}#dc2626{% endif %};">{{ readiness.salary_score }}% ({{ readiness.salary_status }})</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #475569;">Operator Confirmation</span>
+                    <span style="font-weight: 700; color: {% if application_profile.confirmed %}#16a34a{% else %}#d97706{% endif %};">
+                        {% if application_profile.confirmed %}CONFIRMED{% else %}NOT CONFIRMED{% endif %}
+                    </span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #475569;">Application Answers</span>
+                    <span style="font-weight: 600; color: #2563eb;">{{ readiness.answers_count }} stored</span>
+                </div>
+            </div>
+
+            <div style="padding: 12px; border-radius: 6px; text-align: center; font-weight: 700; font-size: 13px; background: {% if readiness.is_ready %}#dcfce7; color: #166534; border: 1px solid #bbf7d0;{% else %}#fff1f2; color: #be123c; border: 1px solid #fecdd3;{% endif %}">
+                {{ readiness.overall_status }}
+            </div>
+
+            {% if readiness.missing_items %}
+                <div style="margin-top: 14px; padding: 12px; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #92400e; margin-bottom: 6px;">
+                        ⚠️ Required before job applications:
+                    </div>
+                    <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #78350f; line-height: 1.5;">
+                        {% for item in readiness.missing_items %}
+                            <li><strong>{{ item }}</strong></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Approved Answer Bank Records -->
+        <div class="card" style="background: #ffffff; padding: 22px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <h4 style="font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                📑 Approved Screening Answers ({{ answers|length }})
+            </h4>
+
+            {% if answers %}
+                <div style="display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto;">
+                    {% for ans in answers %}
+                        <div style="padding: 8px 10px; background: #f8fafc; border-radius: 6px; border-left: 3px solid #2563eb; font-size: 12px;">
+                            <div style="font-weight: 700; color: #0f172a;">{{ ans.canonical_key }}</div>
+                            <div style="color: #334155; margin-top: 2px;">{{ ans.answer_value }}</div>
+                            <div style="color: #64748b; font-size: 10px; margin-top: 2px;">Uses: {{ ans.usage_count }} | {{ ans.confirmed_at|date:"M d, Y" }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="font-size: 12px; color: #64748b; line-height: 1.4;">
+                    No answers stored yet. As you answer screening questions in <em>Jobs → Needs Your Answer</em>, approved answers will appear here for automatic reuse.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

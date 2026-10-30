@@ -1,0 +1,68 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: huntflow_staging_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-huntflow_staging}
+      POSTGRES_USER: ${POSTGRES_USER:-huntflow_staging_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+    volumes:
+      - pgdata_staging:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-huntflow_staging_user} -d ${POSTGRES_DB:-huntflow_staging}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - huntflow_staging_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: huntflow_staging_redis
+    restart: unless-stopped
+    volumes:
+      - redisdata_staging:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - huntflow_staging_net
+
+  web:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        - BUILD_ENV=production
+    container_name: huntflow_staging_web
+    restart: unless-stopped
+    environment:
+      - DJANGO_DEBUG=False
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY required}
+      - TOKEN_PEPPER=${TOKEN_PEPPER:?TOKEN_PEPPER required}
+      - HUNTFLOW_CREDENTIAL_ENCRYPTION_KEY=${HUNTFLOW_CREDENTIAL_ENCRYPTION_KEY:?HUNTFLOW_CREDENTIAL_ENCRYPTION_KEY required}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-huntflow_staging_user}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}@postgres:5432/${POSTGRES_DB:-huntflow_staging}
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_ALLOWED_HOSTS=*
+      - CSRF_TRUSTED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: /start-web
+    ports:
+      - "127.0.0.1:8000:8000"
+    networks:
+      - huntflow_staging_net
+
+volumes:
+  pgdata_staging:
+  redisdata_staging:
+
+networks:
+  huntflow_staging_net:
+    driver: bridge

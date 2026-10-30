@@ -1,0 +1,14 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Draft Review{% endblock %}
+{% block main_content %}
+<div class="card p-4">
+  <h2>Draft #{{ draft.id }} Review</h2>
+  <p><strong>Status:</strong> {{ draft.status }} | <strong>Sendable:</strong> {{ draft.sendable }} | <strong>Checksum:</strong> {{ draft.content_checksum|slice:":16" }}</p>
+  <div class="p-3 bg-light rounded mb-3">{{ draft.content }}</div>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" name="action" value="approve" class="btn btn-success">Approve for Pilot</button>
+    <button type="submit" name="action" value="reject" class="btn btn-danger">Reject</button>
+  </form>
+</div>
+{% endblock %}

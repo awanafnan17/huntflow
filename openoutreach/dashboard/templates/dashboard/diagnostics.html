@@ -1,0 +1,285 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Diagnostics{% endblock %}
+
+{% block page_title %}Diagnostics{% endblock %}
+{% block page_subtitle %}Read-only system health report. No actions are triggered from this page.{% endblock %}
+
+{% block main_content %}
+
+<div class="card" style="margin-bottom: 20px; padding: 12px 16px; background: #f0fdf4; border-color: #bbf7d0;">
+    <span style="color: #166534; font-size: 13px;">This page is read-only. No connections, messages, or LLM calls are made.</span>
+</div>
+
+{# LinkedIn Account Health #}
+<div class="card" style="margin-bottom: 20px;">
+    <h2 class="card-title">LinkedIn Account Health</h2>
+    {% if accounts %}
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Active</th>
+                    <th>Connect Limit</th>
+                    <th>Connect Used</th>
+                    <th>Follow-up Limit</th>
+                    <th>Follow-up Used</th>
+                    <th>Campaigns</th>
+                    <th>Active Campaigns</th>
+                    <th>Estimated Slot Allocation</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in accounts %}
+                <tr>
+                    <td>{{ a.username }}</td>
+                    <td>{% if a.active %}<span class="text-success">Yes</span>{% else %}<span class="text-danger">No</span>{% endif %}</td>
+                    <td>{% if a.connect_limit is None %}Unlimited{% else %}{{ a.connect_limit }}{% endif %}</td>
+                    <td>{{ a.connect_used }}</td>
+                    <td>{% if a.followup_limit is None %}Unlimited{% else %}{{ a.followup_limit }}{% endif %}</td>
+                    <td>{{ a.followup_used }}</td>
+                    <td>{% for c in a.campaigns %}{{ c }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</td>
+                    <td>{% for name in a.active_campaigns %}{{ name }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</td>
+                    <td>
+                        {% for alloc in a.allocations %}
+                            {{ alloc }}{% if not forloop.last %}<br>{% endif %}
+                        {% empty %}
+                            -
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color: #94a3b8; font-size: 13px;">No LinkedIn accounts configured.</p>
+    {% endif %}
+</div>
+
+{# LLM Status #}
+<div class="card" style="margin-bottom: 20px;">
+    <h2 class="card-title">LLM Configuration</h2>
+    <div class="detail-row">
+        <span class="detail-label">API Key Status</span>
+        <span class="detail-value">{% if llm_configured %}<span class="text-success">Configured</span>{% else %}<span class="text-danger">Not configured</span>{% endif %}</span>
+    </div>
+</div>
+
+{# Task Queue Summary #}
+<div class="card" style="margin-bottom: 20px;">
+    <h2 class="card-title">Task Queue Summary</h2>
+    <div class="metrics-grid">
+        {% for label, count in task_summary.items %}
+        <div class="card metric-card">
+            <span class="metric-label">{{ label }}</span>
+            <span class="metric-value{% if label == 'Failed' %} text-danger{% endif %}">{{ count }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{# Campaign Health #}
+{% for c in campaigns %}
+<div class="card" style="margin-bottom: 20px;">
+    <h2 class="card-title">{{ c.campaign.name }}</h2>
+    
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
+        {% if c.campaign.is_active %}
+            <span style="padding: 4px 10px; background: #dcfce7; color: #166534; border-radius: 4px; font-size: 12px; font-weight: bold;">Active</span>
+        {% else %}
+            <span style="padding: 4px 10px; background: #fee2e2; color: #991b1b; border-radius: 4px; font-size: 12px; font-weight: bold;">Paused</span>
+        {% endif %}
+        <span style="padding: 4px 10px; background: #f1f5f9; border-radius: 4px; font-size: 12px;">Users: {% for u in c.users %}{{ u }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</span>
+        <span style="padding: 4px 10px; background: #f1f5f9; border-radius: 4px; font-size: 12px;">Shares Account: {% for ap in c.assigned_profiles %}{{ ap }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</span>
+        <span style="padding: 4px 10px; background: #f1f5f9; border-radius: 4px; font-size: 12px;">Daily Caps: Connect: {% if c.campaign.daily_connect_limit is None %}Unlimited{% else %}{{ c.campaign.daily_connect_limit }}{% endif %} | Follow-up: {% if c.campaign.daily_follow_up_limit is None %}Unlimited{% else %}{{ c.campaign.daily_follow_up_limit }}{% endif %}</span>
+        <span style="padding: 4px 10px; background: {% if c.campaign.connection_note_enabled %}#f0fdf4{% else %}#fef2f2{% endif %}; border-radius: 4px; font-size: 12px;">Notes: {% if c.campaign.connection_note_enabled %}Enabled{% else %}Disabled{% endif %}</span>
+    </div>
+
+    {# Blocking Reasons #}
+    {% if c.blocking %}
+    <div style="margin-bottom: 16px; padding: 10px 14px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px;">
+        <strong style="color: #991b1b; font-size: 13px;">Blocking Reasons:</strong>
+        <ul style="margin: 6px 0 0 16px; padding: 0; color: #b91c1c; font-size: 13px;">
+            {% for reason in c.blocking %}
+            <li>{{ reason }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% else %}
+    <div style="margin-bottom: 16px; padding: 10px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px;">
+        <span style="color: #166534; font-size: 13px;">No blocking issues detected.</span>
+    </div>
+    {% endif %}
+
+    {# Deal Funnel #}
+    <h3 style="font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #334155;">Lead Funnel</h3>
+    <div class="metrics-grid" style="margin-bottom: 16px;">
+        <div class="card metric-card">
+            <span class="metric-label">Discovered</span>
+            <span class="metric-value">{{ c.total_leads }}</span>
+        </div>
+        {% for label, count in c.funnel.items %}
+        <div class="card metric-card">
+            <span class="metric-label">{{ label }}</span>
+            <span class="metric-value{% if label == 'Failed' %} text-danger{% elif label == 'Connected' %} text-success{% endif %}">{{ count }}</span>
+        </div>
+        {% endfor %}
+        <div class="card metric-card">
+            <span class="metric-label">Disqualified</span>
+            <span class="metric-value text-danger">{{ c.disqualified }}</span>
+        </div>
+    </div>
+
+    {# Pending Tasks #}
+    <div style="display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap;">
+        <div class="detail-row" style="flex: 1; min-width: 150px;">
+            <span class="detail-label">Pending Connect</span>
+            <span class="detail-value">{{ c.connect_pending }}</span>
+        </div>
+        <div class="detail-row" style="flex: 1; min-width: 150px;">
+            <span class="detail-label">Pending Follow-up</span>
+            <span class="detail-value">{{ c.followup_pending }}</span>
+        </div>
+        <div class="detail-row" style="flex: 1; min-width: 150px;">
+            <span class="detail-label">Failed Tasks</span>
+            <span class="detail-value text-danger">{{ c.failed_tasks }}</span>
+        </div>
+    </div>
+
+    {# Campaign Readiness Checklist #}
+    <h3 style="font-size: 13px; font-weight: 700; margin-top: 20px; margin-bottom: 12px; color: #334155;">Readiness Checklist</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-bottom: 20px;">
+        {% for item in c.checklist %}
+        <div style="padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #f8fafc; display: flex; flex-direction: column; justify-content: space-between;">
+            <div style="display: flex; justify-content: space-between; align-items: start; gap: 8px; margin-bottom: 4px;">
+                <span style="font-weight: 600; font-size: 13px; color: #334155;">{{ item.name }}</span>
+                {% if item.status == 'Pass' %}
+                <span style="font-size: 10px; font-weight: 700; color: #166534; background-color: #dcfce7; padding: 2px 6px; border-radius: 4px;">Pass</span>
+                {% elif item.status == 'Warning' %}
+                <span style="font-size: 10px; font-weight: 700; color: #854d0e; background-color: #fef9c3; padding: 2px 6px; border-radius: 4px;">Warning</span>
+                {% else %}
+                <span style="font-size: 10px; font-weight: 700; color: #991b1b; background-color: #fee2e2; padding: 2px 6px; border-radius: 4px;">Blocked</span>
+                {% endif %}
+            </div>
+            <span style="font-size: 11px; color: #64748b;">{{ item.desc }}</span>
+        </div>
+        {% endfor %}
+    </div>
+
+    {# Recent Keywords #}
+    {% if c.keywords %}
+    <h3 style="font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #334155;">Recent Search Keywords</h3>
+    <ul style="margin: 0 0 16px 16px; font-size: 13px; color: #475569;">
+        {% for kw in c.keywords %}
+        <li>{{ kw.keyword }} <span style="color: #94a3b8; font-size: 11px;">{% if kw.used_at %}{{ kw.used_at|date:"Y-m-d H:i" }}{% endif %}</span></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {# Recent Qualified or Ready Leads #}
+    {% if c.recent_qualified_or_ready %}
+    <h3 style="font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #334155;">Recent Qualified or Ready Leads</h3>
+    <ul style="margin: 0 0 16px 16px; font-size: 13px; color: #166534;">
+        {% for d in c.recent_qualified_or_ready %}
+        <li><a href="{% url 'dashboard:lead_detail' d.lead.pk %}" style="color: #166534; font-weight: 600;">{{ d.lead.public_identifier }}</a> <span style="color: #64748b; font-size: 11px;">[{{ d.state }}] - updated {{ d.update_date|date:"Y-m-d H:i" }}</span></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {# Recent Disqualifications #}
+    {% if c.recent_dq %}
+    <h3 style="font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #334155;">Recent Disqualifications</h3>
+    <ul style="margin: 0 0 16px 16px; font-size: 13px; color: #b91c1c;">
+        {% for d in c.recent_dq %}
+        <li><a href="{% url 'dashboard:lead_detail' d.lead.pk %}" style="color: #b91c1c; font-weight: 600;">{{ d.lead.public_identifier }}</a>: {{ d.reason|default:"No reason recorded" }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {# Note Preview #}
+    {% if c.note_preview %}
+    <h3 style="font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #334155;">Sample Note Preview (template only)</h3>
+    <div style="padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #334155; white-space: pre-wrap;">{{ c.note_preview }}</div>
+    {% endif %}
+</div>
+{% empty %}
+<div class="card" style="margin-bottom: 20px;">
+    <p style="color: #94a3b8; font-size: 13px;">No campaigns configured.</p>
+</div>
+{% endfor %}
+
+{# Recent Action Logs #}
+<div class="card" style="margin-bottom: 20px;">
+    <h2 class="card-title">Recent Action Logs</h2>
+    {% if recent_logs %}
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Type</th>
+                    <th>Campaign</th>
+                    <th>Account</th>
+                    <th>Note Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in recent_logs %}
+                <tr>
+                    <td>{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+                    <td>{{ log.action_type }}</td>
+                    <td>{{ log.campaign.name }}</td>
+                    <td>{{ log.linkedin_profile.linkedin_username }}</td>
+                    <td>
+                        {% if log.metadata.note_was_sent == True %}
+                            <span class="text-success">Sent</span>
+                        {% elif log.metadata.note_was_sent == False %}
+                            <span class="text-danger">Not sent</span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color: #94a3b8; font-size: 13px;">No action logs recorded.</p>
+    {% endif %}
+</div>
+
+{# Recent Failed Tasks #}
+<div class="card" style="margin-bottom: 20px;">
+    <h2 class="card-title">Recent Task Failures</h2>
+    {% if recent_failures %}
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Scheduled At</th>
+                    <th>Type</th>
+                    <th>Campaign</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in recent_failures %}
+                <tr>
+                    <td>{{ f.task.scheduled_at|date:"Y-m-d H:i:s" }}</td>
+                    <td>{{ f.task.task_type }}</td>
+                    <td>{{ f.campaign_name }}</td>
+                    <td><span class="text-danger">Failed</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color: #94a3b8; font-size: 13px;">No task failures recorded.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

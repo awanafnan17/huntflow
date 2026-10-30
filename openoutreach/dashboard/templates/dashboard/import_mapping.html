@@ -1,0 +1,14 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Configure Column Mapping{% endblock %}
+{% block main_content %}
+<div class="card p-4">
+  <h2>Configure CSV Column Mapping</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3"><label>First Name Column</label><select name="map_first_name" class="form-select">{% for h in csv_headers %}<option value="{{ h }}">{{ h }}</option>{% endfor %}</select></div>
+    <div class="mb-3"><label>Email Column</label><select name="map_email" class="form-select">{% for h in csv_headers %}<option value="{{ h }}">{{ h }}</option>{% endfor %}</select></div>
+    <div class="mb-3"><label>LinkedIn Column</label><select name="map_linkedin_url" class="form-select">{% for h in csv_headers %}<option value="{{ h }}">{{ h }}</option>{% endfor %}</select></div>
+    <button type="submit" class="btn btn-primary">Preview Validation (Zero Writes)</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Sender Identities{% endblock %}
+{% block main_content %}
+<div class="card p-4">
+  <h2>Sender Identities ({{ workspace.name }})</h2>
+  <a href="{% url 'dashboard:sender_create' workspace.id %}" class="btn btn-sm btn-primary mb-3">Add Sender Identity</a>
+  <table class="table">
+    <thead><tr><th>Name</th><th>Email</th><th>Type</th><th>Verification Status</th><th>Active</th></tr></thead>
+    <tbody>
+      {% for s in senders %}
+      <tr>
+        <td>{{ s.display_name }}</td>
+        <td>{{ s.email }}</td>
+        <td>{{ s.sender_type }}</td>
+        <td><span class="badge bg-warning">{{ s.verification_status }}</span></td>
+        <td>{{ s.is_active }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5">No sender identities found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

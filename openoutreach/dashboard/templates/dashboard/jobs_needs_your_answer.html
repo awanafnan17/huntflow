@@ -1,0 +1,97 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Jobs — Needs Your Answer{% endblock %}
+{% block page_title %}Jobs — Needs Your Answer{% endblock %}
+{% block page_subtitle %}Review and answer screening questions encountered during live application attempts.{% endblock %}
+
+{% block main_content %}
+<div style="max-width: 1000px; margin: 0 auto;">
+    {% if applications %}
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            {% for app in applications %}
+                <div class="card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+                        <div>
+                            <h3 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">
+                                {{ app.job.title }}
+                            </h3>
+                            <div style="font-size: 14px; color: #64748b; font-weight: 500;">
+                                🏢 {{ app.job.company }} &bull; 📍 {{ app.job.location|default:"Location unspecified" }}
+                            </div>
+                        </div>
+                        <span class="badge" style="background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 12px;">
+                            ⚠️ Needs Operator Input
+                        </span>
+                    </div>
+
+                    <div style="background: #f8fafc; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
+                        <p style="font-size: 13px; color: #334155; margin: 0; line-height: 1.5;">
+                            <strong>Why HuntFlow stopped:</strong> The employer required answers to specific screening questions that do not exist in your approved profile preferences. To maintain 100% factual integrity, HuntFlow paused the application instead of guessing.
+                        </p>
+                    </div>
+
+                    <form method="POST" action="{% url 'dashboard:jobs_answer_question' app.id %}">
+                        {% csrf_token %}
+                        <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px;">
+                            {% for q in app.unknown_questions %}
+                                <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px;">
+                                    <label style="display: block; font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 8px;">
+                                        ❓ {{ q.question|default:q.text }}
+                                    </label>
+                                    
+                                    {% if q.type == "radio" or q.options %}
+                                        <div style="display: flex; gap: 16px; align-items: center; margin-top: 6px; margin-bottom: 10px;">
+                                            {% for opt in q.options %}
+                                                <label style="font-size: 13px; color: #334155; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                                    <input type="radio" name="answer_{{ q.canonical_key|default:forloop.parentloop.counter }}" value="{{ opt }}" required>
+                                                    {{ opt }}
+                                                </label>
+                                            {% empty %}
+                                                <label style="font-size: 13px; color: #334155; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                                    <input type="radio" name="answer_{{ q.canonical_key|default:forloop.counter }}" value="Yes" required> Yes
+                                                </label>
+                                                <label style="font-size: 13px; color: #334155; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                                    <input type="radio" name="answer_{{ q.canonical_key|default:forloop.counter }}" value="No" required> No
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <input type="text" name="answer_{{ q.canonical_key|default:forloop.counter }}" placeholder="Enter your approved answer..." required style="width: 100%; padding: 8px 12px; border: 1px solid #94a3b8; border-radius: 6px; font-size: 14px; margin-bottom: 10px;">
+                                    {% endif %}
+
+                                    <div style="font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 6px;">
+                                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                            <input type="checkbox" name="save_globally_{{ q.canonical_key|default:forloop.counter }}" checked>
+                                            <span>☑ Use this answer for future applications</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <p style="font-size: 14px; color: #64748b;">No specific unknown questions listed.</p>
+                            {% endfor %}
+                        </div>
+
+                        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                            <a href="{{ app.job.job_url }}" target="_blank" class="btn" style="background: #e2e8f0; color: #334155; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;">
+                                View Job Posting ↗
+                            </a>
+                            <button type="submit" class="btn btn-primary" style="background: #2563eb; color: white; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer;">
+                                Save & Approve for Application
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 48px 24px; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 16px;">🎉</div>
+            <h3 style="font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">All Applications Clear</h3>
+            <p style="font-size: 14px; color: #64748b; margin: 0 auto; max-width: 480px;">
+                There are currently no job applications waiting on unknown screening questions or operator answers.
+            </p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

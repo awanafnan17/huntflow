@@ -1,0 +1,71 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Import Job Description{% endblock %}
+
+{% block page_title %}Import Job Description{% endblock %}
+{% block page_subtitle %}Add details of a new job posting to compute matching scores and draft customized application content.{% endblock %}
+
+{% block main_content %}
+<div class="card" style="padding: 24px; max-width: 800px;">
+    <div>
+        <a href="{% url 'career:job_list' %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline; display: block; margin-bottom: 20px;">
+            &larr; Back to Jobs
+        </a>
+    </div>
+
+    <form method="POST" action="{% url 'career:job_add' %}">
+        {% csrf_token %}
+
+        {% if form.errors %}
+        <div class="alert alert-error" style="margin-bottom: 20px;">
+            <strong>Please correct the errors below:</strong>
+            <ul style="margin: 4px 0 0 0; padding-left: 20px;">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px;">
+            <div>
+                <label style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: #334155;">Job Title:</label>
+                {{ form.title }}
+            </div>
+            <div>
+                <label style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: #334155;">Company:</label>
+                {{ form.company }}
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px;">
+            <div>
+                <label style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: #334155;">Location:</label>
+                {{ form.location }}
+            </div>
+            <div>
+                <label style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: #334155;">Source Portal / Site:</label>
+                {{ form.source }}
+            </div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: #334155;">Job URL (optional):</label>
+            {{ form.job_url }}
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            <label style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: #334155;">Job Description / Requirements:</label>
+            {{ form.description }}
+        </div>
+
+        <div>
+            <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 14px; font-weight: bold;">
+                Import Job Description
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

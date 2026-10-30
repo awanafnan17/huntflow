@@ -1,0 +1,201 @@
+{% extends 'dashboard/settings_base.html' %}
+
+{% block settings_title %}Automation - Settings{% endblock %}
+{% block settings_page_title %}Automation Preferences{% endblock %}
+{% block settings_page_subtitle %}Choose what HuntFlow is allowed to do automatically on your behalf.{% endblock %}
+
+{% block settings_content %}
+<div style="max-width: 780px;">
+
+    <!-- Master Automation Control Banner -->
+    <div class="saas-card" style="margin-bottom: 24px; border-left: 4px solid {% if master_automation_enabled %}#10b981; background: #f0fdf4;{% else %}#f59e0b; background: #fffbeb;{% endif %}">
+        <div class="saas-card-header" style="border-bottom: 1px solid {% if master_automation_enabled %}#bbf7d0;{% else %}#fde68a;{% endif %}">
+            <div class="saas-card-title" style="color: {% if master_automation_enabled %}#047857;{% else %}#92400e;{% endif %}">
+                ⚡ Master Automation: {% if master_automation_enabled %}Active & Running{% else %}Paused{% endif %}
+            </div>
+            <span class="badge {% if master_automation_enabled %}badge-success{% else %}badge-warning{% endif %}">
+                {% if master_automation_enabled %}RUNNING{% else %}PAUSED{% endif %}
+            </span>
+        </div>
+        <p style="font-size: 13px; color: {% if master_automation_enabled %}#166534;{% else %}#78350f;{% endif %}; line-height: 1.5; margin-bottom: 16px;">
+            {% if master_automation_enabled %}
+                HuntFlow is actively monitoring prospects, sending scheduled connection notes, syncing email replies, and preparing job applications.
+            {% else %}
+                HuntFlow is currently in safe mode. No connection requests, messages, emails, or job applications will be sent until you start automation.
+            {% endif %}
+        </p>
+
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            {% if master_automation_enabled %}
+                <form method="POST" action="{% url 'dashboard:automation_pause' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning" style="font-weight: 700;">
+                        ⏸️ Pause Automation
+                    </button>
+                </form>
+            {% else %}
+                <form method="POST" action="{% url 'dashboard:automation_start' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary" style="font-weight: 700;">
+                        ⚡ Start Automation
+                    </button>
+                </form>
+            {% endif %}
+            <a href="{% url 'dashboard:readiness' %}" class="btn" style="font-size: 12px;">
+                Check Launch Readiness →
+            </a>
+        </div>
+    </div>
+
+    <!-- Bounded Production Limits Card -->
+    <div class="saas-card" style="margin-bottom: 24px;">
+        <div class="saas-card-header">
+            <div class="saas-card-title">📊 24-Hour Bounded Production Ceilings (Calendar Day)</div>
+            <span class="badge badge-primary">{{ cfg.mode|default:"BOUNDED_MULTI_CHANNEL_PRODUCTION" }}</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 8px;">
+            <div style="background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Job Applications</div>
+                <div style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 4px 0;">{{ quotas.jobs.consumed|default:0 }} / {{ cfg.max_daily_job_applications|default:50 }}</div>
+                <div style="font-size: 11px; color: #10b981;">Min 70% Match Required</div>
+            </div>
+            <div style="background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Connections</div>
+                <div style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 4px 0;">{{ quotas.connections.consumed|default:0 }} / {{ cfg.max_daily_connections|default:40 }}</div>
+                <div style="font-size: 11px; color: #3b82f6;">Override Active</div>
+            </div>
+            <div style="background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">LinkedIn Messages</div>
+                <div style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 4px 0;">{{ quotas.messages.consumed|default:0 }} / {{ cfg.max_daily_messages|default:90 }}</div>
+                <div style="font-size: 11px; color: #64748b;">Follow-ups: {{ quotas.messages.follow_ups|default:0 }} | Replies: {{ quotas.messages.ai_replies|default:0 }}</div>
+            </div>
+            <div style="background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Outbound Emails</div>
+                <div style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 4px 0;">{{ quotas.emails.consumed|default:0 }} / {{ cfg.max_daily_emails|default:25 }}</div>
+                <div style="font-size: 11px; color: #10b981;">Verified Mailboxes</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Automation Switches Form -->
+    <div class="saas-card">
+        <div class="saas-card-header">
+            <div class="saas-card-title">🤖 Automation Features</div>
+        </div>
+
+        <form method="POST" action="{% url 'dashboard:settings_automation' %}">
+            {% csrf_token %}
+            <div style="display: flex; flex-direction: column; gap: 18px;">
+                <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+                    <input type="checkbox" name="auto_find_prospects" {% if cfg.auto_find_prospects %}checked{% endif %} style="margin-top: 4px; width: 18px; height: 18px;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 14px; color: #0f172a;">Find relevant people</div>
+                        <div style="font-size: 12px; color: #64748b;">Search LinkedIn for matching prospects based on your target roles and industries.</div>
+                    </div>
+                </label>
+
+                <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+                    <input type="checkbox" name="auto_send_connections" {% if cfg.auto_send_connections %}checked{% endif %} style="margin-top: 4px; width: 18px; height: 18px;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 14px; color: #0f172a;">Send LinkedIn connection requests</div>
+                        <div style="font-size: 12px; color: #64748b;">Send personalized, human-written connection invitations at safe daily intervals.</div>
+                    </div>
+                </label>
+
+                <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+                    <input type="checkbox" name="auto_followup" {% if cfg.auto_followup %}checked{% endif %} style="margin-top: 4px; width: 18px; height: 18px;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 14px; color: #0f172a;">Follow up after they accept</div>
+                        <div style="font-size: 12px; color: #64748b;">Send a thoughtful follow-up message when a prospect accepts your connection request.</div>
+                    </div>
+                </label>
+
+                <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+                    <input type="checkbox" name="auto_find_jobs" {% if cfg.auto_find_jobs %}checked{% endif %} style="margin-top: 4px; width: 18px; height: 18px;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 14px; color: #0f172a;">Find matching jobs</div>
+                        <div style="font-size: 12px; color: #64748b;">Discover new job openings matching your resume and career preferences.</div>
+                    </div>
+                </label>
+
+                <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+                    <input type="checkbox" name="auto_apply_jobs" {% if cfg.auto_apply_jobs %}checked{% endif %} style="margin-top: 4px; width: 18px; height: 18px;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 14px; color: #0f172a;">Apply to approved matching jobs</div>
+                        <div style="font-size: 12px; color: #64748b;">Submit Easy Apply applications for jobs you have reviewed and approved.</div>
+                    </div>
+                </label>
+
+                <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+                    <input type="checkbox" name="auto_send_emails" {% if cfg.auto_send_emails %}checked{% endif %} style="margin-top: 4px; width: 18px; height: 18px;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 14px; color: #0f172a;">Send email outreach</div>
+                        <div style="font-size: 12px; color: #64748b;">Send verified email sequences when an email address is confirmed.</div>
+                    </div>
+                </label>
+
+                <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+                    <input type="checkbox" name="auto_monitor_replies" {% if cfg.auto_monitor_replies %}checked{% endif %} style="margin-top: 4px; width: 18px; height: 18px;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 14px; color: #0f172a;">Monitor replies</div>
+                        <div style="font-size: 12px; color: #64748b;">Automatically detect replies and alert you in your Inbox.</div>
+                    </div>
+                </label>
+
+                <button type="submit" class="btn btn-primary" style="margin-top: 12px; align-self: flex-start;">
+                    Save Preferences
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Pending Invitation Backlog Governance & Operator Override -->
+    <div class="saas-card" style="margin-top: 24px; border-left: 4px solid {% if cfg.connection_backlog_operator_override %}#3b82f6; background: #eff6ff;{% else %}#64748b; background: #f8fafc;{% endif %}">
+        <div class="saas-card-header" style="border-bottom: 1px solid {% if cfg.connection_backlog_operator_override %}#bfdbfe;{% else %}#e2e8f0;{% endif %}">
+            <div class="saas-card-title" style="color: {% if cfg.connection_backlog_operator_override %}#1d4ed8;{% else %}#334155;{% endif %}">
+                📬 LinkedIn Invitation Backlog Governance
+            </div>
+            <span class="badge {% if cfg.connection_backlog_operator_override %}badge-primary{% else %}badge-secondary{% endif %}">
+                {% if cfg.connection_backlog_operator_override %}OVERRIDE ACTIVE{% else %}NORMAL LIMITS{% endif %}
+            </span>
+        </div>
+        <div style="font-size: 13px; color: #334155; line-height: 1.5; margin-bottom: 16px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 14px; background: white; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <div>
+                    <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">LinkedIn Sent Invitations</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #0f172a;">{{ linkedin_pending_invitations_count|default:326 }}</div>
+                    <div style="font-size: 11px; color: #ef4444; font-weight: 600;">Exceeds Normal Limit ({{ cfg.max_pending_invitations|default:100 }})</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">CRM Pending Deals</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #0f172a;">{{ crm_pending_deals_count|default:0 }}</div>
+                    <div style="font-size: 11px; color: #64748b;">Awaiting Acceptance Watcher</div>
+                </div>
+            </div>
+            {% if cfg.connection_backlog_operator_override %}
+                <p style="margin: 0; color: #1e40af; font-weight: 600;">
+                    ✅ <strong>Operator Backlog Override is ACTIVE:</strong> Bounded connection requests (up to {{ cfg.max_daily_connections }}/day) are permitted unattended. Old invitations will NOT be auto-withdrawn.
+                </p>
+            {% else %}
+                <p style="margin: 0; color: #475569;">
+                    ℹ️ Normal safety ceiling active. Connection requests pause when pending backlog exceeds {{ cfg.max_pending_invitations }}.
+                </p>
+            {% endif %}
+        </div>
+
+        <form method="POST" action="{% url 'dashboard:automation_toggle_backlog_override' %}">
+            {% csrf_token %}
+            {% if cfg.connection_backlog_operator_override %}
+                <button type="submit" class="btn btn-secondary" style="font-size: 13px; font-weight: 700;">
+                    Disable Override (Enforce {{ cfg.max_pending_invitations }} Cap)
+                </button>
+            {% else %}
+                <button type="submit" class="btn btn-primary" style="font-size: 13px; font-weight: 700;">
+                    Enable Operator Override (Allow Bounded Connections)
+                </button>
+            {% endif %}
+        </form>
+    </div>
+
+</div>
+{% endblock %}

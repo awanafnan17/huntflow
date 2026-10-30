@@ -1,0 +1,82 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}LLM Settings{% endblock %}
+
+{% block page_title %}LLM Configuration{% endblock %}
+{% block page_subtitle %}Manage credentials and models for copy generation.{% endblock %}
+
+{% block main_content %}
+{% if messages %}
+    {% for msg in messages %}
+        <div class="alert alert-info" style="border-color: #bfdbfe; color: #1e3a8a; background-color: #eff6ff; padding: 12px 16px; margin-bottom: 16px; border-radius: 6px;">
+            {{ msg }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="card settings-card" style="background: white; padding: 24px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
+    <h2 class="card-title" style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">Ollama Local Service</h2>
+    <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 14px 18px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
+        <div>
+            <strong style="color: #334155;">Service Endpoint:</strong> <span style="font-family: monospace;">{{ ollama_endpoint }}</span>
+            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                {% if ollama_reachable %}
+                    <span style="color: #16a34a; font-weight: 600;">● Ollama Service Connected</span> — Detected models: {{ detected_models|join:", " }}
+                {% else %}
+                    <span style="color: #dc2626; font-weight: 600;">● Service Unreachable</span> — Ensure `ollama serve` is running at {{ ollama_endpoint }}.
+                {% endif %}
+            </div>
+        </div>
+        <form method="post" style="margin: 0;">
+            {% csrf_token %}
+            <button type="submit" name="action" value="refresh_models" class="btn" style="background-color: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; padding: 6px 14px; border-radius: 4px; font-size: 13px;">Refresh Models</button>
+        </form>
+    </div>
+</div>
+
+<div class="card settings-card" style="background: white; padding: 24px; border-radius: 8px; border: 1px solid #e2e8f0;">
+    <h2 class="card-title" style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">LLM Provider Configuration</h2>
+    <form method="post">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">AI Model Profile (provider:model)</label>
+            {{ form.ai_model }}
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                Ollama Local e.g.: <code>ollama:qwen2.5:1.5b</code> | Remote e.g.: <code>anthropic:claude-sonnet-4-5-20250929</code>, <code>groq:llama-3.3-70b</code>
+            </p>
+            {{ form.ai_model.errors }}
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">API Base URL</label>
+            {{ form.llm_api_base }}
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                Base URL for Ollama (e.g. <code>{{ ollama_endpoint }}</code>) or custom OpenAI-compatible endpoint.
+            </p>
+            {{ form.llm_api_base.errors }}
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Current API Key / Local Provider Status</label>
+            <p style="font-family: monospace; font-size: 13px; color: #1e293b; background-color: #f8fafc; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                {{ masked_api_key_status }}
+            </p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">New API Key (Remote Providers Only)</label>
+            {{ form.llm_api_key }}
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                Leave blank when using Ollama Local (no API key required). Enter new key only for remote paid providers.
+            </p>
+            {{ form.llm_api_key.errors }}
+        </div>
+        
+        <div style="display: flex; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+            <button type="submit" name="action" value="save" class="btn btn-primary" style="background-color: #2563eb; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 500;">Save Configuration</button>
+            <button type="submit" name="action" value="test_config" class="btn" style="background-color: #f8fafc; border: 1px solid #e2e8f0; color: #475569; padding: 8px 18px; border-radius: 6px;">Test Connection</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

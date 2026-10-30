@@ -1,0 +1,29 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{{ action_name }}{% endblock %}
+
+{% block page_title %}{{ action_name }}{% endblock %}
+{% block page_subtitle %}Confirm campaign queue actions.{% endblock %}
+
+{% block main_content %}
+<div class="card settings-card" style="border-color: #ef4444;">
+    <h2 class="card-title" style="color: #ef4444;">Warning: Safety Confirmation Required</h2>
+    
+    <div class="alert alert-info" style="border-color: #ef4444; color: #ef4444; background-color: #fef2f2;">
+        {{ description }}
+    </div>
+    
+    <p style="margin-bottom: 24px; font-size: 14px; color: #1e293b;">
+        You are about to run <strong>{{ action_name }}</strong> for campaign <strong>{{ campaign.name }}</strong>. This will delete <strong>{{ count }}</strong> tasks.
+    </p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="confirm" value="yes">
+        <div style="display: flex; gap: 12px;">
+            <button type="submit" class="btn btn-primary" style="background-color: #ef4444; border-color: #ef4444;">Confirm Action</button>
+            <a href="{{ cancel_url }}" class="btn">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

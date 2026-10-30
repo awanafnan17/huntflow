@@ -1,0 +1,274 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Sales CRM - HuntFlow{% endblock %}
+
+{% block page_title %}📇 Sales CRM Console{% endblock %}
+{% block page_subtitle %}Unified multi-channel outreach pipeline, lead management, and deal status tracking.{% endblock %}
+
+{% block main_content %}
+<!-- Sub-navigation Tabs -->
+<div style="border-bottom: 2px solid #e2e8f0; margin-bottom: 24px; display: flex; gap: 8px;">
+    <a href="?tab=overview" class="btn" style="border: none; border-bottom: 3px solid {% if tab == 'overview' %}#0284c7{% else %}transparent{% endif %}; background: transparent; color: {% if tab == 'overview' %}#0284c7{% else %}#64748b{% endif %}; font-weight: 700; border-radius: 0; padding: 10px 16px;">
+        📊 Overview
+    </a>
+    <a href="?tab=leads" class="btn" style="border: none; border-bottom: 3px solid {% if tab == 'leads' %}#0284c7{% else %}transparent{% endif %}; background: transparent; color: {% if tab == 'leads' %}#0284c7{% else %}#64748b{% endif %}; font-weight: 700; border-radius: 0; padding: 10px 16px;">
+        👥 Leads ({{ kpis.total_leads }})
+    </a>
+    <a href="?tab=deals" class="btn" style="border: none; border-bottom: 3px solid {% if tab == 'deals' %}#0284c7{% else %}transparent{% endif %}; background: transparent; color: {% if tab == 'deals' %}#0284c7{% else %}#64748b{% endif %}; font-weight: 700; border-radius: 0; padding: 10px 16px;">
+        💼 Deals ({{ kpis.total_deals }})
+    </a>
+    <a href="?tab=pipeline" class="btn" style="border: none; border-bottom: 3px solid {% if tab == 'pipeline' %}#0284c7{% else %}transparent{% endif %}; background: transparent; color: {% if tab == 'pipeline' %}#0284c7{% else %}#64748b{% endif %}; font-weight: 700; border-radius: 0; padding: 10px 16px;">
+        📌 Funnel Pipeline
+    </a>
+    <a href="?tab=activity" class="btn" style="border: none; border-bottom: 3px solid {% if tab == 'activity' %}#0284c7{% else %}transparent{% endif %}; background: transparent; color: {% if tab == 'activity' %}#0284c7{% else %}#64748b{% endif %}; font-weight: 700; border-radius: 0; padding: 10px 16px;">
+        📜 Action Audit
+    </a>
+</div>
+
+<!-- Filters Bar -->
+<div class="card" style="margin-bottom: 24px; padding: 16px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;">
+    <form method="get" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <input type="hidden" name="tab" value="{{ tab }}">
+        <div style="flex: 1; min-width: 220px;">
+            <input type="text" name="q" value="{{ q }}" placeholder="Search by name, company, title, email..." class="input-text" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
+        </div>
+        <div>
+            <select name="campaign_id" class="input-text" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                <option value="">All Campaigns</option>
+                {% for c in campaigns %}
+                    <option value="{{ c.pk }}" {% if campaign_id == c.pk|stringformat:"i" %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <select name="state" class="input-text" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                <option value="">All States</option>
+                {% for code, name in deal_states %}
+                    <option value="{{ code }}" {% if state_filter == code %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="padding: 8px 16px;">Filter Results</button>
+        {% if q or campaign_id or state_filter %}
+            <a href="?tab={{ tab }}" class="btn" style="border-color: #cbd5e1; background: transparent;">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+{% if tab == 'overview' %}
+<!-- Overview KPI Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div class="card" style="padding: 20px; border-left: 4px solid #0284c7;">
+        <span style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">Total Leads</span>
+        <div style="font-size: 28px; font-weight: 800; color: #0f172a; margin-top: 4px;">{{ kpis.total_leads }}</div>
+    </div>
+    <div class="card" style="padding: 20px; border-left: 4px solid #3b82f6;">
+        <span style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">Qualified</span>
+        <div style="font-size: 28px; font-weight: 800; color: #0f172a; margin-top: 4px;">{{ kpis.qualified_count }}</div>
+    </div>
+    <div class="card" style="padding: 20px; border-left: 4px solid #f59e0b;">
+        <span style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">Ready to Connect</span>
+        <div style="font-size: 28px; font-weight: 800; color: #d97706; margin-top: 4px;">{{ kpis.ready_connect_count }}</div>
+    </div>
+    <div class="card" style="padding: 20px; border-left: 4px solid #8b5cf6;">
+        <span style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">Pending Connection</span>
+        <div style="font-size: 28px; font-weight: 800; color: #7c3aed; margin-top: 4px;">{{ kpis.pending_count }}</div>
+    </div>
+    <div class="card" style="padding: 20px; border-left: 4px solid #10b981;">
+        <span style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">Connected</span>
+        <div style="font-size: 28px; font-weight: 800; color: #059669; margin-top: 4px;">{{ kpis.connected_count }}</div>
+    </div>
+    <div class="card" style="padding: 20px; border-left: 4px solid #06b6d4;">
+        <span style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">Ready to Email</span>
+        <div style="font-size: 28px; font-weight: 800; color: #0891b2; margin-top: 4px;">{{ kpis.ready_email_count }}</div>
+    </div>
+    <div class="card" style="padding: 20px; border-left: 4px solid #ec4899;">
+        <span style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">Converted</span>
+        <div style="font-size: 28px; font-weight: 800; color: #db2777; margin-top: 4px;">{{ kpis.converted_count }}</div>
+    </div>
+</div>
+
+<div class="card" style="padding: 24px;">
+    <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #0f172a;">Active Prospect Pipeline</h3>
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+        <thead>
+            <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b;">
+                <th style="padding: 10px;">Lead</th>
+                <th style="padding: 10px;">Company / Title</th>
+                <th style="padding: 10px;">Campaign</th>
+                <th style="padding: 10px;">State</th>
+                <th style="padding: 10px;">Outcome</th>
+                <th style="padding: 10px;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in deals %}
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 12px 10px;">
+                    <a href="{% url 'dashboard:lead_detail' d.lead.pk %}" style="font-weight: 700; color: #0284c7; text-decoration: none;">
+                        {{ d.lead.first_name }} {{ d.lead.last_name }}
+                    </a>
+                </td>
+                <td style="padding: 12px 10px; color: #475569;">
+                    {{ d.lead.current_title }} <span style="color: #94a3b8;">at</span> <strong>{{ d.lead.company }}</strong>
+                </td>
+                <td style="padding: 12px 10px; color: #475569;">{{ d.campaign.name }}</td>
+                <td style="padding: 12px 10px;">
+                    <span class="badge badge-primary">{{ d.get_state_display }}</span>
+                </td>
+                <td style="padding: 12px 10px;">
+                    {% if d.outcome %}
+                        <span class="badge badge-secondary">{{ d.get_outcome_display }}</span>
+                    {% else %}
+                        <span style="color: #94a3b8;">Active</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 12px 10px;">
+                    <a href="{% url 'dashboard:lead_detail' d.lead.pk %}" class="btn" style="padding: 4px 8px; font-size: 12px; border-color: #cbd5e1;">View Detail</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="padding: 24px; text-align: center; color: #64748b;">No active deals in CRM yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% elif tab == 'leads' %}
+<!-- Leads Directory View -->
+<div class="card" style="padding: 24px;">
+    <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #0f172a;">All CRM Leads</h3>
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+        <thead>
+            <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b;">
+                <th style="padding: 10px;">Name</th>
+                <th style="padding: 10px;">Title & Company</th>
+                <th style="padding: 10px;">Location</th>
+                <th style="padding: 10px;">Email</th>
+                <th style="padding: 10px;">LinkedIn</th>
+                <th style="padding: 10px;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for l in leads %}
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 12px 10px;">
+                    <a href="{% url 'dashboard:lead_detail' l.pk %}" style="font-weight: 700; color: #0284c7; text-decoration: none;">
+                        {{ l.first_name }} {{ l.last_name }}
+                    </a>
+                </td>
+                <td style="padding: 12px 10px; color: #475569;">
+                    {{ l.current_title }} <span style="color: #94a3b8;">at</span> <strong>{{ l.company }}</strong>
+                </td>
+                <td style="padding: 12px 10px; color: #64748b;">{{ l.location|default:"—" }}</td>
+                <td style="padding: 12px 10px; color: #475569;">{{ l.email|default:"Unresolved" }}</td>
+                <td style="padding: 12px 10px;">
+                    <a href="{{ l.linkedin_url }}" target="_blank" style="color: #0284c7; text-decoration: none; font-size: 12px;">Profile &rarr;</a>
+                </td>
+                <td style="padding: 12px 10px;">
+                    <a href="{% url 'dashboard:lead_detail' l.pk %}" class="btn" style="padding: 4px 8px; font-size: 12px;">Detail</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="padding: 24px; text-align: center; color: #64748b;">No leads match the query.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% elif tab == 'deals' %}
+<!-- Deals View -->
+<div class="card" style="padding: 24px;">
+    <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #0f172a;">CRM Deals Overview</h3>
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+        <thead>
+            <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b;">
+                <th style="padding: 10px;">Lead</th>
+                <th style="padding: 10px;">Campaign</th>
+                <th style="padding: 10px;">State</th>
+                <th style="padding: 10px;">Outcome</th>
+                <th style="padding: 10px;">Next Check</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in deals %}
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 12px 10px; font-weight: 600;">{{ d.lead.first_name }} {{ d.lead.last_name }}</td>
+                <td style="padding: 12px 10px;">{{ d.campaign.name }}</td>
+                <td style="padding: 12px 10px;"><span class="badge badge-primary">{{ d.get_state_display }}</span></td>
+                <td style="padding: 12px 10px;">{{ d.get_outcome_display|default:"Active" }}</td>
+                <td style="padding: 12px 10px; color: #64748b;">{{ d.next_check_pending_at|default:"N/A" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% elif tab == 'pipeline' %}
+<!-- Pipeline Funnel Columns -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+    {% for st_name, group_deals in pipeline_groups.items %}
+    <div class="card" style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0;">
+        <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #334155; border-bottom: 2px solid #cbd5e1; padding-bottom: 6px; display: flex; justify-content: space-between;">
+            <span>{{ st_name }}</span>
+            <span class="badge badge-secondary">{{ group_deals|length }}</span>
+        </h4>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            {% for d in group_deals %}
+            <div style="background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 13px;">
+                <strong style="color: #0f172a; display: block;">{{ d.lead.first_name }} {{ d.lead.last_name }}</strong>
+                <span style="color: #64748b; font-size: 11px;">{{ d.lead.company }} • {{ d.campaign.name }}</span>
+            </div>
+            {% empty %}
+            <div style="font-size: 12px; color: #94a3b8; padding: 8px; text-align: center;">No deals</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% elif tab == 'activity' %}
+<!-- Action Audit Log -->
+<div class="card" style="padding: 24px;">
+    <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #0f172a;">Action Log Audit Trail</h3>
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+        <thead>
+            <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b;">
+                <th style="padding: 8px;">Timestamp</th>
+                <th style="padding: 8px;">Account</th>
+                <th style="padding: 8px;">Lead</th>
+                <th style="padding: 8px;">Action</th>
+                <th style="padding: 8px;">Success</th>
+                <th style="padding: 8px;">Note</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in action_logs %}
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 8px; color: #64748b;">{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+                <td style="padding: 8px; font-weight: 600;">{{ log.linkedin_profile.display_name|default:"System" }}</td>
+                <td style="padding: 8px;">{{ log.target_public_identifier|default:"—" }}</td>
+                <td style="padding: 8px;"><span class="badge badge-primary">{{ log.get_action_type_display }}</span></td>
+                <td style="padding: 8px;">
+                    {% if log.success %}
+                        <span style="color: #15803d; font-weight: 700;">PASS</span>
+                    {% else %}
+                        <span style="color: #b91c1c; font-weight: 700;">FAIL</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 8px; color: #475569;">{{ log.note|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="padding: 16px; text-align: center; color: #94a3b8;">No action logs recorded yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

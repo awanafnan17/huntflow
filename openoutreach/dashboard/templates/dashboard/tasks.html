@@ -1,0 +1,127 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Tasks{% endblock %}
+
+{% block page_title %}Task Queue{% endblock %}
+{% block page_subtitle %}Review scheduled and executed daemon operations.{% endblock %}
+
+{% block main_content %}
+<div class="toolbar" style="margin-bottom: 20px; padding: 15px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 15px;">
+    <form method="get" class="filter-form" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0;">
+        <select name="status" class="select-box" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+            <option value="">All Statuses</option>
+            {% for value, label in statuses %}
+                <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="task_type" class="select-box" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+            <option value="">All Types</option>
+            {% for value, label in task_types %}
+                <option value="{{ value }}" {% if selected_type == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="campaign_id" class="select-box" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+            <option value="">All Campaigns</option>
+            {% for camp in campaigns %}
+                <option value="{{ camp.id }}" {% if selected_campaign == camp.id|slugify %}selected{% endif %}>{{ camp.name }}</option>
+            {% endfor %}
+        </select>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; margin-left: 10px;">
+            <label style="font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; color: #475569;">
+                <input type="checkbox" name="overdue_only" value="yes" {% if overdue_only == 'yes' %}checked{% endif %} style="width: 15px; height: 15px;">
+                Overdue Only
+            </label>
+
+            <label style="font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; color: #475569;">
+                <input type="checkbox" name="pending_only" value="yes" {% if pending_only == 'yes' %}checked{% endif %} style="width: 15px; height: 15px;">
+                Pending Only
+            </label>
+
+            <label style="font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; color: #475569;">
+                <input type="checkbox" name="failed_only" value="yes" {% if failed_only == 'yes' %}checked{% endif %} style="width: 15px; height: 15px;">
+                Failed Only
+            </label>
+
+            <label style="font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; color: #475569;">
+                <input type="checkbox" name="cancelled_only" value="yes" {% if cancelled_only == 'yes' %}checked{% endif %} style="width: 15px; height: 15px;">
+                Cancelled Only
+            </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-left: auto;">Filter</button>
+        
+        {% if selected_status or selected_type or selected_campaign or overdue_only or pending_only or failed_only or cancelled_only %}
+            <a href="{% url 'dashboard:tasks' %}" class="btn" style="border-color: #cbd5e1;">Reset</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Scheduled (UTC)</th>
+                <th>Campaign</th>
+                <th>Lead</th>
+                <th>Overdue Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in tasks %}
+            <tr>
+                <td style="font-size: 13px; font-weight: 600; color: #64748b;">#{{ item.task.id }}</td>
+                <td style="font-weight: 600;">
+                    <span class="badge badge-info">{{ item.task.task_type }}</span>
+                </td>
+                <td>
+                    <span class="badge {% if item.task.status == 'completed' %}badge-success{% elif item.task.status == 'running' %}badge-info{% elif item.task.status == 'failed' %}badge-danger{% elif item.task.status == 'cancelled' %}badge-warning{% else %}badge-secondary{% endif %}">
+                        {{ item.task.status }}
+                    </span>
+                </td>
+                <td style="font-size: 13px; color: #334155;">{{ item.task.scheduled_at|date:"Y-m-d H:i:s" }}</td>
+                <td style="font-size: 13px;">
+                    {% if item.campaign %}
+                        <a href="{% url 'dashboard:campaigns' %}" style="color: #3b82f6; text-decoration: none; font-weight: 500;">{{ item.campaign.name }}</a>
+                    {% else %}
+                        <span class="text-light" style="color: #94a3b8;">None</span>
+                    {% endif %}
+                </td>
+                <td style="font-size: 13px;">
+                    {% if item.lead %}
+                        <a href="{% url 'dashboard:lead_detail' item.lead.pk %}" style="color: #3b82f6; text-decoration: none; font-weight: 500;">{{ item.lead.public_identifier }}</a>
+                    {% else %}
+                        <span style="color: #94a3b8;">None</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.is_overdue %}
+                        <span class="badge badge-danger" style="background-color: #fee2e2; color: #ef4444; border: 1px solid #fecaca;">Overdue by {{ item.overdue_duration }}</span>
+                    {% else %}
+                        <span style="color: #94a3b8; font-size: 12px;">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'dashboard:task_detail' item.task.pk %}" class="btn" style="padding: 5px 10px; font-size: 12px; border-color: #cbd5e1; font-weight: 600;">Manage</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8">
+                    <div class="empty-state">
+                        <div class="empty-state-title">No tasks found</div>
+                        <p>No tasks match the active filters.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

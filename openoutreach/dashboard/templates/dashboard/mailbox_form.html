@@ -1,0 +1,77 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_subtitle %}Configure SMTP sender accounts and pacing limits.{% endblock %}
+
+{% block main_content %}
+<div class="card settings-card">
+    <form method="post">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="alert alert-info" style="border-color: #ef4444; color: #ef4444; background-color: #fef2f2;">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">SMTP Host</label>
+            {{ form.host }}
+            {{ form.host.errors }}
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Port</label>
+            {{ form.port }}
+            {{ form.port.errors }}
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Username</label>
+            {{ form.username }}
+            {{ form.username.errors }}
+        </div>
+        
+        {% if mailbox %}
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Current Password Status</label>
+                <p style="font-family: monospace; font-size: 13px; color: #1e293b; background-color: #f8fafc; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                    {{ masked_password_status }}
+                </p>
+            </div>
+        {% endif %}
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Password / App Password</label>
+            {{ form.password }}
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                {% if mailbox %}
+                    Leave blank to keep existing secret. Enter a new value to replace it.
+                {% else %}
+                    Enter the SMTP password or third-party app password.
+                {% endif %}
+            </p>
+            {{ form.password.errors }}
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">From Email Address</label>
+            {{ form.from_address }}
+            {{ form.from_address.errors }}
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Daily Limit</label>
+            {{ form.daily_limit }}
+            {{ form.daily_limit.errors }}
+        </div>
+        
+        <div style="display: flex; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+            <button type="submit" class="btn btn-primary">Save Mailbox</button>
+            <a href="{% url 'dashboard:mailboxes' %}" class="btn">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

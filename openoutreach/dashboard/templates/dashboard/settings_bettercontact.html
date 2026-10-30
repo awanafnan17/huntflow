@@ -1,0 +1,43 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}BetterContact Settings{% endblock %}
+
+{% block page_title %}BetterContact API{% endblock %}
+{% block page_subtitle %}Manage credentials for work email discovery.{% endblock %}
+
+{% block main_content %}
+{% if messages %}
+    {% for msg in messages %}
+        <div class="alert alert-info" style="border-color: #bfdbfe; color: #1e3a8a; background-color: #eff6ff;">
+            {{ msg }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="card settings-card">
+    <h2 class="card-title">Enrichment Integration</h2>
+    <form method="post">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Current API Key Status</label>
+            <p style="font-family: monospace; font-size: 13px; color: #1e293b; background-color: #f8fafc; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                {{ masked_api_key_status }}
+            </p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">New BetterContact API Key</label>
+            <input type="password" name="bettercontact_api_key" class="input-text" autocomplete="new-password">
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                Leave blank to keep existing secret. Enter a new value to replace it.
+            </p>
+            {{ form.bettercontact_api_key.errors }}
+        </div>
+        
+        <div style="display: flex; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+            <button type="submit" class="btn btn-primary">Save Configuration</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

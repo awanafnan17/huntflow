@@ -1,0 +1,18 @@
+{
+  "data": {
+    "*elements": [
+      "urn:li:fsd_profile:SYNTHETIC001"
+    ]
+  },
+  "included": [
+    {
+      "entityUrn": "urn:li:fsd_profile:SYNTHETIC001",
+      "$type": "com.linkedin.voyager.dash.identity.profile.Profile",
+      "firstName": "Alex",
+      "lastName": "Morgan",
+      "publicIdentifier": "synthetic-alex-morgan",
+      "headline": "Synthetic software developer fixture",
+      "summary": "Fictional profile for parser tests."
+    }
+  ]
+}

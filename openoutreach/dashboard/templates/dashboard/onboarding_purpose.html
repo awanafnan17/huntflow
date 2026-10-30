@@ -1,0 +1,19 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Select Campaign Purpose{% endblock %}
+{% block main_content %}
+<div class="card p-4">
+  <h2>Select Campaign Purpose</h2>
+  <form method="post">
+    {% csrf_token %}
+    {% for purpose in purposes %}
+      <div class="form-check mb-2">
+        <input class="form-check-input" type="radio" name="purpose_id" value="{{ purpose.id }}" id="p_{{ purpose.id }}" {% if forloop.first %}checked{% endif %}>
+        <label class="form-check-label" for="p_{{ purpose.id }}">
+          <strong>{{ purpose.name }}</strong> ({{ purpose.slug }}) — {{ purpose.description }}
+        </label>
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary mt-3">Create Initial Campaign</button>
+  </form>
+</div>
+{% endblock %}

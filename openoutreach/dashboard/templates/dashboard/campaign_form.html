@@ -1,0 +1,385 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_subtitle %}Specify parameters for outbound lead campaigns.{% endblock %}
+
+{% block main_content %}
+{% if campaign %}
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start;">
+    <div class="card settings-card" style="margin-bottom: 0;">
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-info" style="border-color: #ef4444; color: #ef4444; background-color: #fef2f2;">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Campaign Name</label>
+                {{ form.name }}
+                {{ form.name.errors }}
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Operators Assigned</label>
+                <div style="max-height: 150px; overflow-y: auto; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; background-color: #f8fafc;">
+                    {{ form.users }}
+                </div>
+                {{ form.users.errors }}
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Booking Link</label>
+                {{ form.booking_link }}
+                {{ form.booking_link.errors }}
+            </div>
+            <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                {{ form.is_active }}
+                <label style="font-weight: 600; color: #64748b; margin: 0;">Active Campaign</label>
+            </div>
+            {{ form.is_active.errors }}
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Action Fraction</label>
+                {{ form.action_fraction }}
+                {{ form.action_fraction.errors }}
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Campaign Daily Connect Limit</label>
+                {{ form.daily_connect_limit }}
+                <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px;">
+                    {{ form.connect_unlimited }}
+                    <label style="font-size: 13px; color: #64748b;">{{ form.connect_unlimited.label }}</label>
+                </div>
+                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">{{ form.connect_unlimited.help_text }}</p>
+                {{ form.daily_connect_limit.errors }}
+                {{ form.connect_unlimited.errors }}
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Campaign Daily Follow Up Limit</label>
+                {{ form.daily_follow_up_limit }}
+                <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px;">
+                    {{ form.follow_up_unlimited }}
+                    <label style="font-size: 13px; color: #64748b;">{{ form.follow_up_unlimited.label }}</label>
+                </div>
+                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">{{ form.follow_up_unlimited.help_text }}</p>
+                {{ form.daily_follow_up_limit.errors }}
+                {{ form.follow_up_unlimited.errors }}
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Product Documentation</label>
+                {{ form.product_docs }}
+                {{ form.product_docs.errors }}
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Campaign Objective</label>
+                {{ form.campaign_objective }}
+                {{ form.campaign_objective.errors }}
+            </div>
+
+            <div style="margin-bottom: 20px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 12px;">🎯 Target Audience & Search Criteria</h3>
+                
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Target Job Titles</label>
+                    {{ form.target_job_titles }}
+                    {{ form.target_job_titles.errors }}
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Target Seniority</label>
+                    {{ form.target_seniority }}
+                    {{ form.target_seniority.errors }}
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Target Industries</label>
+                    {{ form.target_industries }}
+                    {{ form.target_industries.errors }}
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Target Locations</label>
+                    {{ form.target_locations }}
+                    {{ form.target_locations.errors }}
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Target Company Size</label>
+                    {{ form.target_company_size }}
+                    {{ form.target_company_size.errors }}
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Target Keywords</label>
+                    {{ form.target_keywords }}
+                    {{ form.target_keywords.errors }}
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 12px;">Connection Note Settings</h3>
+                
+                <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    {{ form.connection_note_enabled }}
+                    <label style="font-weight: 600; color: #64748b;">Enable Connection Notes</label>
+                </div>
+                {{ form.connection_note_enabled.errors }}
+                
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Custom Template</label>
+                    {{ form.connection_note_template }}
+                    <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                        Placeholders supported: first_name, full_name, title, company, industry, location, campaign_name, company_or_industry.
+                    </p>
+                    {{ form.connection_note_template.errors }}
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Extra Generator Instructions</label>
+                    {{ form.connection_note_instructions }}
+                    {{ form.connection_note_instructions.errors }}
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                <button type="submit" class="btn btn-primary">Save Campaign</button>
+                <a href="{% url 'dashboard:campaigns' %}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="card" style="padding: 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; width: 100%;">
+        <h3 style="font-size: 16px; font-weight: 700; margin-top: 0; margin-bottom: 16px; color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">Queue Summary</h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                <span style="color: #64748b; font-size: 13px;">Status</span>
+                <span style="font-weight: 600; font-size: 13px;">
+                    {% if campaign.is_active %}
+                        <span class="badge badge-success">Active</span>
+                    {% else %}
+                        <span class="badge badge-secondary" style="background-color: #fee2e2; color: #991b1b;">Paused</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                <span style="color: #64748b; font-size: 13px;">Pending Connect</span>
+                <span style="font-weight: 600; font-size: 13px; color: #0f172a;">{{ connect_pending }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                <span style="color: #64748b; font-size: 13px;">Pending Follow-up</span>
+                <span style="font-weight: 600; font-size: 13px; color: #0f172a;">{{ followup_pending }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                <span style="color: #64748b; font-size: 13px;">Pending Check</span>
+                <span style="font-weight: 600; font-size: 13px; color: #0f172a;">{{ check_pending }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                <span style="color: #64748b; font-size: 13px;">Ignored Pending</span>
+                <span style="font-weight: 600; font-size: 13px; color: #0f172a;">{{ ignored_pending }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                <span style="color: #64748b; font-size: 13px;">Failed Tasks</span>
+                <span style="font-weight: 600; font-size: 13px; color: #ef4444;">{{ failed_count }}</span>
+            </div>
+        </div>
+
+        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">Quick Actions</h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% if campaign.is_active %}
+                <form action="{% url 'dashboard:campaign_pause' campaign.pk %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn" style="width: 100%; text-align: center; border-color: #e2e8f0;">Pause Campaign</button>
+                </form>
+            {% else %}
+                <form action="{% url 'dashboard:campaign_resume' campaign.pk %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary" style="width: 100%; text-align: center;">Resume Campaign</button>
+                </form>
+            {% endif %}
+
+            <form action="{% url 'dashboard:campaign_reconcile' campaign.pk %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn" style="width: 100%; text-align: center; border-color: #e2e8f0;">Reconcile Schedule</button>
+            </form>
+
+            <a href="{% url 'dashboard:campaign_clear_pending' campaign.pk %}" class="btn" style="width: 100%; text-align: center; border-color: #ef4444; color: #ef4444; background: transparent;">Clear Pending Tasks</a>
+            <a href="{% url 'dashboard:campaign_clear_failed' campaign.pk %}" class="btn" style="width: 100%; text-align: center; border-color: #ef4444; color: #ef4444; background: transparent;">Clear Failed Tasks</a>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card settings-card">
+    <form method="post">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="alert alert-info" style="border-color: #ef4444; color: #ef4444; background-color: #fef2f2;">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Campaign Name</label>
+            {{ form.name }}
+            {{ form.name.errors }}
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Operators Assigned</label>
+            <div style="max-height: 150px; overflow-y: auto; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; background-color: #f8fafc;">
+                {{ form.users }}
+            </div>
+            {{ form.users.errors }}
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Booking Link</label>
+            {{ form.booking_link }}
+            {{ form.booking_link.errors }}
+        </div>
+        <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+            {{ form.is_active }}
+            <label style="font-weight: 600; color: #64748b; margin: 0;">Active Campaign</label>
+        </div>
+        {{ form.is_active.errors }}
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Action Fraction</label>
+            {{ form.action_fraction }}
+            {{ form.action_fraction.errors }}
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Campaign Daily Connect Limit</label>
+            {{ form.daily_connect_limit }}
+            <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px;">
+                {{ form.connect_unlimited }}
+                <label style="font-size: 13px; color: #64748b;">{{ form.connect_unlimited.label }}</label>
+            </div>
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">{{ form.connect_unlimited.help_text }}</p>
+            {{ form.daily_connect_limit.errors }}
+            {{ form.connect_unlimited.errors }}
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Campaign Daily Follow Up Limit</label>
+            {{ form.daily_follow_up_limit }}
+            <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px;">
+                {{ form.follow_up_unlimited }}
+                <label style="font-size: 13px; color: #64748b;">{{ form.follow_up_unlimited.label }}</label>
+            </div>
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">{{ form.follow_up_unlimited.help_text }}</p>
+            {{ form.daily_follow_up_limit.errors }}
+            {{ form.follow_up_unlimited.errors }}
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Product Documentation</label>
+            {{ form.product_docs }}
+            {{ form.product_docs.errors }}
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Campaign Objective</label>
+            {{ form.campaign_objective }}
+            {{ form.campaign_objective.errors }}
+        {% if icp_validation %}
+        <div class="card" style="margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; background: #ffffff;">
+            <h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                🎯 ICP Configuration Consistency:
+                <span style="padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; background: {% if icp_validation.status == 'VALID' %}#dcfce7; color: #166534;{% else %}#fef2f2; color: #991b1b;{% endif %}">
+                    {{ icp_validation.status }}
+                </span>
+            </h4>
+            <div style="font-size: 12px; margin-bottom: 8px; display: flex; gap: 12px;">
+                <div>Titles: <strong>{% if icp_validation.titles_configured %}Configured{% else %}Unconfigured{% endif %}</strong></div>
+                <div>Seniority: <strong>{% if icp_validation.seniority_configured %}Configured{% else %}Unconfigured{% endif %}</strong></div>
+                <div>Locations: <strong>{% if icp_validation.locations_configured %}Configured{% else %}Unconfigured{% endif %}</strong></div>
+            </div>
+            {% if icp_validation.warnings %}
+                <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 10px; border-radius: 6px; font-size: 12px; color: #991b1b;">
+                    <strong>⚠️ Consistency Warning:</strong>
+                    <ul style="margin: 4px 0 0 0; padding-left: 16px;">
+                        {% for w in icp_validation.warnings %}
+                            <li>{{ w }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div style="margin-bottom: 20px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+            <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 12px;">🎯 Target Audience & Search Criteria</h3>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Target Job Titles</label>
+                {{ form.target_job_titles }}
+                {{ form.target_job_titles.errors }}
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Target Seniority</label>
+                {{ form.target_seniority }}
+                {{ form.target_seniority.errors }}
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Target Industries</label>
+                {{ form.target_industries }}
+                {{ form.target_industries.errors }}
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Target Locations</label>
+                {{ form.target_locations }}
+                {{ form.target_locations.errors }}
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Target Company Size</label>
+                {{ form.target_company_size }}
+                {{ form.target_company_size.errors }}
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Target Keywords</label>
+                {{ form.target_keywords }}
+                {{ form.target_keywords.errors }}
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+            <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 12px;">Connection Note Settings</h3>
+            
+            <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                {{ form.connection_note_enabled }}
+                <label style="font-weight: 600; color: #64748b;">Enable Connection Notes</label>
+            </div>
+            {{ form.connection_note_enabled.errors }}
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Custom Template</label>
+                {{ form.connection_note_template }}
+                <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                    Placeholders supported: first_name, full_name, title, company, industry, location, campaign_name, company_or_industry.
+                </p>
+                {{ form.connection_note_template.errors }}
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Extra Generator Instructions</label>
+                {{ form.connection_note_instructions }}
+                {{ form.connection_note_instructions.errors }}
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+            <button type="submit" class="btn btn-primary">Save Campaign</button>
+            <a href="{% url 'dashboard:campaigns' %}" class="btn">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

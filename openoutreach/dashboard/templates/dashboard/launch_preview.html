@@ -1,0 +1,131 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Launch Preview{% endblock %}
+
+{% block page_title %}Outreach Launch Preview{% endblock %}
+{% block page_subtitle %}Dry-run execution dry-run of tasks scheduled to execute next.{% endblock %}
+
+{% block main_content %}
+<div style="display: flex; flex-direction: column; gap: 24px;">
+    <div>
+        <a href="{% url 'dashboard:operations' %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline;">
+            &larr; View Operations Console
+        </a>
+    </div>
+
+    {# Scoping & Limit Selector #}
+    <div class="card" style="padding: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 14px; font-weight: 600; color: #475569;">Scope:</span>
+            {% if preview.campaign_scoped %}
+                <span class="badge badge-info" style="font-size: 13px;">Campaign Scoped: {{ scoped_campaign.name }}</span>
+            {% else %}
+                <span class="badge badge-success" style="font-size: 13px;">Global Status</span>
+            {% endif %}
+        </div>
+        <form method="get" style="margin: 0; display: flex; align-items: center; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <label for="campaign_id" style="font-size: 13px; color: #64748b;">Campaign:</label>
+                <select name="campaign_id" id="campaign_id" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background-color: white;" onchange="this.form.submit()">
+                    <option value="">All Campaigns (Global)</option>
+                    {% for camp in campaigns %}
+                        <option value="{{ camp.id }}" {% if preview.scoped_campaign_id == camp.id %}selected{% endif %}>{{ camp.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <label for="limit" style="font-size: 13px; color: #64748b;">Preview Limit:</label>
+                <select name="limit" id="limit" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background-color: white;" onchange="this.form.submit()">
+                    <option value="5" {% if limit == 5 %}selected{% endif %}>5</option>
+                    <option value="10" {% if limit == 10 %}selected{% endif %}>10</option>
+                    <option value="20" {% if limit == 20 %}selected{% endif %}>20</option>
+                    <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    {# Estimated Outcome Banner #}
+    <div class="card" style="border-left: 5px solid {% if preview.readiness_status == 'blocked' %}#ef4444{% elif preview.readiness_status == 'warning' %}#f59e0b{% else %}#10b981{% endif %};">
+        <h3 class="card-title" style="margin-bottom: 6px;">Estimated Launch Outcome</h3>
+        <p style="margin: 0; font-size: 15px; font-weight: 600; color: #1e293b;">
+            {{ preview.estimated_outcome }}
+        </p>
+        <p style="margin: 8px 0 0 0; color: #64748b; font-size: 13px;">
+            Based on current Launch Readiness Check: 
+            <a href="{% url 'dashboard:readiness' %}" style="color: #2563eb; text-decoration: underline;">Inspect Readiness Status &rarr;</a>
+        </p>
+    </div>
+
+    {# Preview Statistics Grid #}
+    <div class="metrics-grid">
+        <div class="card metric-card">
+            <span class="metric-label">Ready Now (Overdue)</span>
+            <span class="metric-value text-success" style="font-weight: bold;">{{ preview.executable_now_count }}</span>
+        </div>
+        <div class="card metric-card">
+            <span class="metric-label">Future Executable</span>
+            <span class="metric-value">{{ preview.future_executable_count }}</span>
+        </div>
+        <div class="card metric-card">
+            <span class="metric-label">Ignored (Paused)</span>
+            <span class="metric-value text-secondary">{{ preview.ignored_paused_count }}</span>
+        </div>
+        <div class="card metric-card">
+            <span class="metric-label">Failed Tasks</span>
+            <span class="metric-value text-danger">{{ preview.failed_tasks_count }}</span>
+        </div>
+    </div>
+
+    {# Executable Queue Preview #}
+    <div class="card">
+        <h2 class="card-title" style="margin-bottom: 16px;">Executable Queue Preview (Next {{ preview.next_executable_tasks|length }} Scheduled Tasks)</h2>
+        {% if preview.next_executable_tasks %}
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                {% for task in preview.next_executable_tasks %}
+                    <div style="padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #f8fafc;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                            <div>
+                                <span style="font-size: 14px; font-weight: bold; color: #0f172a;">Task #{{ task.id }}</span>
+                                <span class="badge badge-info" style="margin-left: 8px; font-size: 11px;">{{ task.task_type }}</span>
+                                {% if task.is_overdue %}
+                                    <span style="font-size: 11px; background-color: #fee2e2; color: #ef4444; padding: 2px 8px; border-radius: 12px; margin-left: 8px; font-weight: bold;">Overdue</span>
+                                {% endif %}
+                            </div>
+                            <div style="font-size: 13px; color: #475569;">
+                                Scheduled: <strong>{{ task.scheduled_at }}</strong>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 12px; font-size: 13px;">
+                            <div>
+                                <span style="color: #64748b;">Campaign:</span>
+                                <a href="{% url 'dashboard:campaign_edit' pk=task.campaign_id %}" style="color: #2563eb; text-decoration: underline; font-weight: 500;">{{ task.campaign_name }}</a>
+                            </div>
+                            <div>
+                                <span style="color: #64748b;">Target Lead:</span>
+                                {% if task.lead_public_id %}
+                                    <strong style="color: #1e293b;">{{ task.lead_public_id }}</strong>
+                                {% else %}
+                                    <span style="color: #94a3b8;">None linked</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <span style="font-size: 12px; font-weight: 600; color: #64748b; display: block; margin-bottom: 4px;">Payload Parameters (Masked):</span>
+                            <pre style="margin: 0; background-color: #0f172a; color: #94a3b8; padding: 12px; border-radius: 6px; font-size: 12px; font-family: monospace; overflow-x: auto;">{{ task.payload_summary }}</pre>
+                        </div>
+                        <div style="margin-top: 12px; text-align: right;">
+                            <a href="{% url 'dashboard:task_detail' pk=task.id %}" style="font-size: 12px; color: #2563eb; font-weight: bold; text-decoration: underline;">Inspect Task Details &rarr;</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="padding: 40px; text-align: center; color: #94a3b8; background-color: #f8fafc; border-radius: 8px; border: 1px dashed #e2e8f0; font-size: 14px;">
+                No executable pending tasks available in the selected campaign scope.
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Delete Mailbox{% endblock %}
+
+{% block page_title %}Delete Mailbox{% endblock %}
+{% block page_subtitle %}Confirm deletion of email sending inboxes.{% endblock %}
+
+{% block main_content %}
+<div class="card settings-card" style="border-color: #ef4444;">
+    <h2 class="card-title" style="color: #ef4444;">Confirm Deletion</h2>
+    
+    <p style="margin-bottom: 24px; font-size: 14px; color: #1e293b;">
+        Are you sure you want to delete mailbox <strong>{{ mailbox.username }}</strong>? This action cannot be undone.
+    </p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div style="display: flex; gap: 12px;">
+            <button type="submit" class="btn btn-primary" style="background-color: #ef4444; border-color: #ef4444;">Delete Permanently</button>
+            <a href="{% url 'dashboard:mailboxes' %}" class="btn">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

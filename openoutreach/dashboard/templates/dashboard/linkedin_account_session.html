@@ -1,0 +1,142 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}LinkedIn Session Health: {{ profile.linkedin_username }}{% endblock %}
+
+{% block page_title %}LinkedIn Session Health{% endblock %}
+{% block page_subtitle %}Secure session verification, token lifetime management, and manual/automated re-authentication tools.{% endblock %}
+
+{% block main_content %}
+<div style="display: flex; flex-direction: column; gap: 24px; max-width: 800px;">
+    <div>
+        <a href="{% url 'dashboard:linkedin_accounts' %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline;">
+            &larr; Back to Accounts List
+        </a>
+    </div>
+
+    {# Session Health Card #}
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+            <div>
+                <h3 style="margin: 0; font-size: 18px; color: #1e293b;">{{ profile.linkedin_username }}</h3>
+                <span style="font-size: 12px; color: #64748b;">Profile Identifier: {{ profile.self_lead.public_identifier|default:"(Discovering...)" }}</span>
+            </div>
+            <div>
+                {% if profile.session_status == 'valid' %}
+                    <span class="badge badge-success" style="font-size: 14px; padding: 6px 12px;">Active / Valid</span>
+                {% elif profile.session_status == 'checkpoint' %}
+                    <span class="badge badge-warning" style="font-size: 14px; padding: 6px 12px;">Checkpoint Challenge ⚠️</span>
+                {% elif profile.session_status == 'restricted' %}
+                    <span class="badge badge-danger" style="font-size: 14px; padding: 6px 12px;">Account Restricted 🚫</span>
+                {% elif profile.session_status == 'expired' %}
+                    <span class="badge badge-danger" style="font-size: 14px; padding: 6px 12px;">Expired / Cleared</span>
+                {% else %}
+                    <span class="badge badge-info" style="font-size: 14px; padding: 6px 12px;">Unknown / Unchecked</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div class="card" style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 12px;">
+                <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">Last Checked</span>
+                <span style="font-size: 14px; font-weight: 600; color: #334155;">
+                    {% if profile.last_validated_at %}
+                        {{ profile.last_validated_at|date:"Y-m-d H:i:s" }} UTC
+                    {% else %}
+                        Never Checked
+                    {% endif %}
+                </span>
+            </div>
+            <div class="card" style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 12px;">
+                <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">Last Authenticated</span>
+                <span style="font-size: 14px; font-weight: 600; color: #334155;">
+                    {% if profile.last_authenticated_at %}
+                        {{ profile.last_authenticated_at|date:"Y-m-d H:i:s" }} UTC
+                    {% else %}
+                        Never Authenticated
+                    {% endif %}
+                </span>
+            </div>
+            <div class="card" style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 12px;">
+                <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">Session Age</span>
+                <span style="font-size: 14px; font-weight: 600; color: #334155;">{{ session_age_str }}</span>
+            </div>
+        </div>
+
+        {% if profile.session_error_details %}
+        <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; border-radius: 6px; font-size: 13px;">
+            <strong style="color: #991b1b; display: block; margin-bottom: 4px;">Diagnostic Error Details:</strong>
+            <code style="color: #b91c1c; font-family: monospace; word-break: break-all;">{{ profile.session_error_details }}</code>
+        </div>
+        {% endif %}
+
+        {# Direct Masked Session Key (li_at) Input Form #}
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 4px;">
+            <h4 style="margin: 0 0 6px 0; font-size: 14px; color: #1e293b; font-weight: 600;">
+                🔑 Direct Session Key (li_at) Entry
+            </h4>
+            <p style="font-size: 12px; color: #64748b; margin: 0 0 14px 0;">
+                Paste the <code>li_at</code> cookie value for <strong>{{ profile.linkedin_username }}</strong>. The key is securely saved only for this profile and is never displayed, logged, or printed.
+            </p>
+            <form method="POST" id="liAtForm" style="display: flex; flex-direction: column; gap: 12px;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="save_li_at">
+                <div>
+                    <label for="li_at_cookie_input" style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #475569; margin-bottom: 6px;">
+                        li_at Session Cookie Value
+                    </label>
+                    <input type="password" 
+                           id="li_at_cookie_input" 
+                           name="li_at_cookie" 
+                           placeholder="Paste li_at cookie value (e.g. AQEDAW...)" 
+                           autocomplete="off" 
+                           required
+                           style="width: 100%; padding: 10px 14px; font-family: monospace; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; background-color: #ffffff; color: #0f172a;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button type="submit" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+                        Save & Validate
+                    </button>
+                    <button type="button" onclick="document.getElementById('li_at_cookie_input').value='';" class="btn" style="background-color: #ffffff; border: 1px solid #cbd5e1; color: #64748b; font-weight: 500;">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {# Session Action Center #}
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; display: flex; flex-wrap: wrap; gap: 12px;">
+            <form method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="validate">
+                <button type="submit" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+                    Validate Session
+                </button>
+            </form>
+
+            <form method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="refresh">
+                <button type="submit" class="btn" style="display: inline-flex; align-items: center; gap: 6px;">
+                    Refresh Session
+                </button>
+            </form>
+
+            <form method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="manual_login">
+                <button type="submit" class="btn" style="display: inline-flex; align-items: center; gap: 6px; border-color: #3b82f6; color: #2563eb; background-color: #eff6ff;">
+                    Manual Login
+                </button>
+            </form>
+
+            <form method="POST" style="margin: 0; margin-left: auto;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="clear">
+                <button type="submit" class="btn" style="display: inline-flex; align-items: center; gap: 6px; border-color: #ef4444; color: #ef4444;" onclick="return confirm('Are you sure you want to clear the saved session cookies? This will expire the session.');">
+                    Clear Session
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

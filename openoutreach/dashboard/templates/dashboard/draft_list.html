@@ -1,0 +1,24 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Generated Drafts{% endblock %}
+{% block main_content %}
+<div class="card p-4">
+  <h2>Generated Drafts (Draft Mode Only)</h2>
+  <table class="table">
+    <thead><tr><th>ID</th><th>Deal</th><th>Sequence Step</th><th>Status</th><th>Sendable</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for d in drafts %}
+      <tr>
+        <td>{{ d.id }}</td>
+        <td>{{ d.deal_id }}</td>
+        <td>Step #{{ d.sequence_step.sequence_number }}</td>
+        <td><span class="badge bg-secondary">{{ d.status }}</span></td>
+        <td><span class="badge bg-danger">{{ d.sendable }}</span></td>
+        <td><a href="{% url 'dashboard:draft_detail' workspace.id d.id %}" class="btn btn-sm btn-outline-primary">Review</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6">No generated drafts found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

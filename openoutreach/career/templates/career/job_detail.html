@@ -1,0 +1,122 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{{ job.title }} at {{ job.company }}{% endblock %}
+
+{% block page_title %}{{ job.title }}{% endblock %}
+{% block page_subtitle %}{{ job.company }} &bull; {{ job.location|default:"Remote" }}{% endblock %}
+
+{% block main_content %}
+<div style="max-width: 1000px; display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start;">
+    
+    {# Left column: Job Description & Details #}
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+        <div class="card" style="padding: 24px;">
+            <div>
+                <a href="{% url 'career:job_list' %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline; display: block; margin-bottom: 20px;">
+                    &larr; Back to Jobs
+                </a>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 16px;">
+                <div>
+                    <h2 style="margin: 0; font-size: 20px; color: #1e293b;">Job Description</h2>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">
+                        Imported via {{ job.source }} on {{ job.created_at|date:"Y-m-d H:i" }} UTC
+                    </p>
+                </div>
+                {% if job.job_url %}
+                <a href="{{ job.job_url }}" target="_blank" class="btn" style="padding: 6px 12px; font-size: 12px;">
+                    View Original Posting &nearrow;
+                </a>
+                {% endif %}
+            </div>
+
+            <div style="font-size: 14px; color: #334155; line-height: 1.7; white-space: pre-wrap;">{{ job.description }}</div>
+        </div>
+    </div>
+
+    {# Right column: Application Drafts & Matching #}
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+        {# Match Score Card #}
+        <div class="card" style="padding: 24px;">
+            <h3 style="margin: 0 0 16px 0; font-size: 15px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">ATS Fit & Match Analysis</h3>
+            {% if job.match_score %}
+            <div style="text-align: center; margin-bottom: 16px;">
+                <div style="font-size: 36px; font-weight: bold; color: {% if job.match_score >= 80 %}#16a34a{% elif job.match_score >= 50 %}#ca8a04{% else %}#dc2626{% endif %};">
+                    {{ job.match_score }}%
+                </div>
+                <div style="font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 500;">
+                    {% if job.match_score >= 85 %}Excellent Match{% elif job.match_score >= 70 %}Strong Match{% elif job.match_score >= 50 %}Possible Match{% else %}Low Match / Reject{% endif %}
+                </div>
+            </div>
+            {% if job.match_explanation %}
+            <div style="font-size: 13px; color: #475569; line-height: 1.6; background-color: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
+                <strong>Analysis:</strong><br>
+                {{ job.match_explanation }}
+            </div>
+            {% endif %}
+            <form method="POST" action="{% url 'career:job_match' job.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn" style="width: 100%; font-size: 12px; padding: 8px; background-color: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1;">
+                    Recalculate ATS Fit
+                </button>
+            </form>
+            {% else %}
+            <div style="text-align: center; padding: 16px 0; color: #64748b; font-size: 13px; font-style: italic; margin-bottom: 16px;">
+                No match score computed yet.
+            </div>
+            <form method="POST" action="{% url 'career:job_match' job.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 12px; padding: 8px;">
+                    Analyze ATS Job Fit
+                </button>
+            </form>
+            {% endif %}
+        </div>
+
+        {# Application Status / Tailoring Card #}
+        <div class="card" style="padding: 24px;">
+            <h3 style="margin: 0 0 16px 0; font-size: 15px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">Application Package</h3>
+            
+            {% if application %}
+            <div style="margin-bottom: 16px;">
+                <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">Status</span>
+                <span class="badge {% if application.status == 'submitted' %}badge-success{% elif application.status == 'approved' %}badge-info{% elif application.status == 'failed' %}badge-error{% elif application.status == 'needs_info' %}badge-warning{% else %}badge-info{% endif %}" style="font-size: 12px; font-weight: bold;">
+                    {{ application.get_status_display }}
+                </span>
+                {% if application.externally_confirmed %}
+                <span class="badge badge-success" style="font-size: 11px; margin-left: 6px;">✓ Externally Verified</span>
+                {% endif %}
+            </div>
+
+            {% if application.submission_date %}
+            <div style="margin-bottom: 16px;">
+                <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">Submitted On</span>
+                <span style="font-size: 13px; color: #334155; font-weight: 600;">{{ application.submission_date|date:"Y-m-d H:i" }} UTC</span>
+            </div>
+            {% endif %}
+
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 16px; border-top: 1px solid #f1f5f9; padding-top: 16px;">
+                <span style="font-size: 12px; color: #64748b; font-weight: 500;">Tailored Content Drafts exist for this job application package.</span>
+                <a href="{% url 'career:application_review' application.pk %}" class="btn btn-primary" style="text-align: center; font-size: 12px; padding: 8px;">
+                    Review & Edit Application Drafts
+                </a>
+                <a href="{% url 'career:download_docx' application.pk %}" class="btn" style="text-align: center; font-size: 12px; padding: 8px; background: #f8fafc; border: 1px solid #cbd5e1;">
+                    Download Tailored Resume (.docx)
+                </a>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 12px 0;">
+                <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">No application package has been generated for this job description.</p>
+                <form method="POST" action="{% url 'career:job_apply' job.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 13px; padding: 10px;">
+                        Generate Tailored ATS Package
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

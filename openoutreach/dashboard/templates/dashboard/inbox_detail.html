@@ -1,0 +1,195 @@
+{% extends 'dashboard/base.html' %}
+{% load dashboard_filters %}
+
+{% block title %}Alert Details - {{ alert.title }}{% endblock %}
+
+{% block page_title %}Alert Notification Details{% endblock %}
+{% block page_subtitle %}Review diagnostic metadata, update resolution states, and track audit event timeline logs.{% endblock %}
+
+{% block main_content %}
+<div style="display: flex; flex-direction: column; gap: 24px;">
+
+    <div>
+        <a href="{% url 'dashboard:operator_inbox' %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline;">
+            &larr; Back to Operator Inbox
+        </a>
+    </div>
+
+    {# Alert Info Layout #}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+        
+        {# Details Specs Card #}
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
+                <h3 class="card-title" style="margin: 0;">Alert Definition</h3>
+                <span class="badge {% if alert.severity == 'hard' %}badge-danger{% elif alert.severity == 'warning' %}badge-warning{% else %}badge-info{% endif %}" style="text-transform: uppercase;">
+                    {{ alert.severity }} severity
+                </span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Status state</span>
+                <span class="detail-value">
+                    <span class="badge {% if alert.status == 'active' %}badge-danger{% elif alert.status == 'acknowledged' %}badge-info{% elif alert.status == 'snoozed' %}badge-warning{% elif alert.status == 'dismissed' %}badge-secondary{% else %}badge-success{% endif %}" style="text-transform: capitalize;">
+                        {{ alert.status }}
+                    </span>
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Title</span>
+                <span class="detail-value" style="font-weight: bold; color: #0f172a;">{{ alert.title }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Source</span>
+                <span class="detail-value" style="text-transform: capitalize;">{{ alert.source }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Occurrence count</span>
+                <span class="detail-value">{{ alert.occurrence_count }} times</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">First Seen</span>
+                <span class="detail-value">{{ alert.first_seen_at|date:"Y-m-d H:i:s" }} UTC</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Last Seen</span>
+                <span class="detail-value">{{ alert.last_seen_at|date:"Y-m-d H:i:s" }} UTC</span>
+            </div>
+            {% if alert.snoozed_until %}
+                <div class="detail-row">
+                    <span class="detail-label">Snoozed Until</span>
+                    <span class="detail-value text-warning" style="font-weight: bold;">{{ alert.snoozed_until|date:"Y-m-d H:i:s" }} UTC</span>
+                </div>
+            {% endif %}
+            {% if alert.acknowledged_by %}
+                <div class="detail-row">
+                    <span class="detail-label">Acknowledged By</span>
+                    <span class="detail-value">{{ alert.acknowledged_by.username }} at {{ alert.acknowledged_at }}</span>
+                </div>
+            {% endif %}
+            {% if alert.dismissed_by %}
+                <div class="detail-row">
+                    <span class="detail-label">Dismissed By</span>
+                    <span class="detail-value">{{ alert.dismissed_by.username }} at {{ alert.dismissed_at }}</span>
+                </div>
+            {% endif %}
+            {% if alert.resolved_at %}
+                <div class="detail-row">
+                    <span class="detail-label">Resolved At</span>
+                    <span class="detail-value text-success">{{ alert.resolved_at }}</span>
+                </div>
+            {% endif %}
+            {% if alert.fix_link %}
+                <div class="detail-row" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e2e8f0;">
+                    <span class="detail-label">Troubleshoot Pathway</span>
+                    <span class="detail-value">
+                        <a href="{{ alert.fix_link }}" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px; text-decoration: none;">
+                            Navigate to Fix &rarr;
+                        </a>
+                    </span>
+                </div>
+            {% endif %}
+        </div>
+
+        {# Action Forms Card #}
+        <div class="card">
+            <h3 class="card-title" style="margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">Update Alert State</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                
+                {# Acknowledge Alert Form #}
+                {% if alert.status != 'acknowledged' %}
+                    <form method="POST" action="{% url 'dashboard:operator_inbox_acknowledge' pk=alert.id %}" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #f8fafc;">
+                        {% csrf_token %}
+                        <h4 style="margin: 0 0 8px 0; font-size: 13.5px; font-weight: bold; color: #1e293b;">Acknowledge Alert</h4>
+                        <input type="text" name="note" placeholder="Optional acknowledgement note..." style="width: 100%; padding: 6px 10px; font-size: 12.5px; border: 1px solid #cbd5e1; border-radius: 4px; margin-bottom: 8px;">
+                        <button type="submit" class="btn btn-primary" style="padding: 6px 12px; font-size: 12.5px;">Mark Acknowledged</button>
+                    </form>
+                {% endif %}
+
+                {# Snooze Alert Form #}
+                {% if alert.status != 'resolved' %}
+                    <form method="POST" action="{% url 'dashboard:operator_inbox_snooze' pk=alert.id %}" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #f8fafc;">
+                        {% csrf_token %}
+                        <h4 style="margin: 0 0 8px 0; font-size: 13.5px; font-weight: bold; color: #1e293b;">Snooze Alert</h4>
+                        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                            <select name="hours" style="padding: 6px; font-size: 12.5px; border: 1px solid #cbd5e1; border-radius: 4px; background-color: white;">
+                                <option value="2">2 Hours</option>
+                                <option value="4">4 Hours</option>
+                                <option value="8">8 Hours</option>
+                                <option value="24" selected>24 Hours</option>
+                                <option value="48">48 Hours</option>
+                            </select>
+                            <input type="text" name="note" placeholder="Snooze explanation note..." style="flex: 1; padding: 6px 10px; font-size: 12.5px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                        </div>
+                        <button type="submit" class="btn btn-warning" style="padding: 6px 12px; font-size: 12.5px;">Snooze Notification</button>
+                    </form>
+                {% endif %}
+
+                {# Dismiss Alert Form #}
+                {% if alert.status != 'dismissed' and alert.status != 'resolved' %}
+                    <form method="POST" action="{% url 'dashboard:operator_inbox_dismiss' pk=alert.id %}" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #fef2f2;">
+                        {% csrf_token %}
+                        <h4 style="margin: 0 0 8px 0; font-size: 13.5px; font-weight: bold; color: #991b1b;">Dismiss Alert</h4>
+                        <input type="text" name="note" placeholder="Reason for alert dismissal..." required style="width: 100%; padding: 6px 10px; font-size: 12.5px; border: 1px solid #fca5a5; border-radius: 4px; margin-bottom: 8px;">
+                        <button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 12.5px;">Dismiss Alert</button>
+                    </form>
+                {% endif %}
+
+                {# Reopen Form #}
+                {% if alert.status == 'resolved' or alert.status == 'dismissed' or alert.status == 'snoozed' %}
+                    <form method="POST" action="{% url 'dashboard:operator_inbox_reopen' pk=alert.id %}" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #f8fafc;">
+                        {% csrf_token %}
+                        <h4 style="margin: 0 0 8px 0; font-size: 13.5px; font-weight: bold; color: #1e293b;">Reopen Alert</h4>
+                        <input type="text" name="note" placeholder="Reopen explanation note..." style="width: 100%; padding: 6px 10px; font-size: 12.5px; border: 1px solid #cbd5e1; border-radius: 4px; margin-bottom: 8px;">
+                        <button type="submit" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12.5px;">Set Back to Active</button>
+                    </form>
+                {% endif %}
+
+                {# Resolve Form #}
+                {% if alert.status != 'resolved' %}
+                    <form method="POST" action="{% url 'dashboard:operator_inbox_resolve' pk=alert.id %}" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #f0fdf4;">
+                        {% csrf_token %}
+                        <h4 style="margin: 0 0 8px 0; font-size: 13.5px; font-weight: bold; color: #166534;">Resolve Alert</h4>
+                        <input type="text" name="note" placeholder="Resolution details..." style="width: 100%; padding: 6px 10px; font-size: 12.5px; border: 1px solid #bbf7d0; border-radius: 4px; margin-bottom: 8px;">
+                        <button type="submit" class="btn btn-success" style="padding: 6px 12px; font-size: 12.5px;">Mark Resolved</button>
+                    </form>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    {# Masked Alert Metadata (Safe from secrets) #}
+    {% if serialized.metadata %}
+        <div class="card">
+            <h3 class="card-title" style="margin-bottom: 12px;">Alert Metadata Context</h3>
+            <pre style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; overflow: auto; font-family: monospace; font-size: 12px; margin: 0;">{{ serialized.metadata|json_dumps_pretty }}</pre>
+        </div>
+    {% endif %}
+
+    {# Timeline Audit Logs #}
+    <div class="card">
+        <h3 class="card-title" style="margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Alert History & Events Timeline</h3>
+        <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
+            {% for evt in events %}
+                <div style="border-bottom: 1px solid #f8fafc; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <span class="badge badge-secondary" style="text-transform: uppercase; font-size: 10px;">{{ evt.event_type }}</span>
+                        <span style="font-weight: 500; margin-left: 8px;">Operator: {{ evt.operator.username|default:"System" }}</span>
+                        {% if evt.note %}
+                            <div style="color: #475569; font-style: italic; margin-top: 4px;">"{{ evt.note }}"</div>
+                        {% endif %}
+                    </div>
+                    <div style="color: #64748b; font-size: 11px;">
+                        {{ evt.created_at }} UTC
+                    </div>
+                </div>
+            {% empty %}
+                <div style="text-align: center; color: #94a3b8; padding: 12px;">No historical events logged for this alert.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,474 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}AI Targeting Assistant{% endblock %}
+{% block page_title %}🎯 AI Targeting Assistant{% endblock %}
+{% block page_subtitle %}Define precise LinkedIn ICPs, configure autonomous 50-job daily goals, and refine audiences in natural language.{% endblock %}
+
+{% block main_content %}
+{% csrf_token %}
+<style>
+.targeting-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 24px;
+    height: calc(100vh - 200px);
+    min-height: 640px;
+}
+.chat-pane {
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+.chat-stream {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: #f8fafc;
+}
+.msg-bubble {
+    max-width: 82%;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-break: break-word;
+}
+.msg-bubble.operator {
+    align-self: flex-end;
+    background: #0f172a;
+    color: #ffffff;
+    border-bottom-right-radius: 2px;
+}
+.msg-bubble.assistant {
+    align-self: flex-start;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #1e293b;
+    border-bottom-left-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.preview-card {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #0f172a;
+}
+.preview-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+.btn-activate {
+    background: #10b981;
+    color: #ffffff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-activate:hover { background: #059669; }
+.btn-secondary-action {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-secondary-action:hover { background: #f8fafc; }
+.chips-container {
+    padding: 10px 20px;
+    background: #ffffff;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+.prompt-chip {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.prompt-chip:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+.chat-input-bar {
+    padding: 16px 20px;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+.targeting-hud {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+}
+.hud-card {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 18px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.hud-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.hud-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.badge-active { background: #dcfce7; color: #166534; }
+.badge-goal { background: #dbeafe; color: #1e40af; }
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+.metric-label { color: #64748b; }
+.metric-value { font-weight: 600; color: #0f172a; }
+</style>
+
+<div class="targeting-grid">
+    <!-- Chat Pane -->
+    <div class="chat-pane">
+        <div style="padding: 12px 20px; background: #ffffff; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-weight: 700; color: #0f172a; font-size: 14px;">🎯 Targeting Assistant</span>
+                <span class="hud-badge badge-active">Ollama qwen3:1.7b</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 12px; color: #64748b;">Campaign Context:</label>
+                <select id="campaignSelector" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px;">
+                    <option value="">-- All / Auto-Detect --</option>
+                    {% for c in campaigns %}
+                        <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="chat-stream" id="chatStream">
+            {% if not messages_list %}
+                <div class="msg-bubble assistant">
+                    👋 <strong>Welcome to the HuntFlow AI Targeting Assistant!</strong><br><br>
+                    You can describe exactly who you want to target, configure your 50-job daily objective, or refine existing campaigns in plain English.<br><br>
+                    <strong>Try saying:</strong><br>
+                    • <em>"Target founders, CTOs and engineering managers at AI startups in the US, UK and Australia. Exclude recruiters."</em><br>
+                    • <em>"Apply to Python backend, AI automation and full-stack Easy Apply jobs worldwide. Target 50 per day."</em><br>
+                    • <em>"Target mining exploration executives in Canada for GeoSentry."</em>
+                </div>
+            {% else %}
+                {% for m in messages_list %}
+                    <div class="msg-bubble {{ m.role }}">
+                        {{ m.content|linebreaksbr }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Prompt Quick Chips -->
+        <div class="chips-container">
+            <span class="prompt-chip" onclick="sendChipText('Target CTOs and founders at AI startups in the US, UK and Australia. Exclude recruiters.')">🎯 AI Founders & CTOs</span>
+            <span class="prompt-chip" onclick="sendChipText('Target mining exploration executives in Australia and Canada for GeoSentry.')">⛏️ GeoSentry Mining Execs</span>
+            <span class="prompt-chip" onclick="sendChipText('Apply to Python backend, AI automation and full-stack Easy Apply jobs. 50 applications per day.')">💼 50 Easy Apply Jobs / Day</span>
+            <span class="prompt-chip" onclick="sendChipText('Who are you targeting right now?')">📊 Active Targeting Status</span>
+            <span class="prompt-chip" onclick="sendChipText('Show me 10 people this would target')">👥 Preview 10 Prospects</span>
+            <span class="prompt-chip" onclick="sendChipText('Show me examples of jobs you\'ll apply to')">💼 Preview Jobs</span>
+            <span class="prompt-chip" onclick="sendChipText('Undo my last targeting change')">⏪ Undo Last Change</span>
+        </div>
+
+        <!-- Input Bar -->
+        <div class="chat-input-bar">
+            <input type="text" id="chatInput" placeholder="Describe your audience or job targeting in plain English..." style="flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 14px;" onkeydown="if(event.key==='Enter') sendTargetingMessage()">
+            <button onclick="sendTargetingMessage()" style="background: #0f172a; color: #ffffff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer;">
+                Send
+            </button>
+        </div>
+    </div>
+
+    <!-- Right HUD Pane -->
+    <div class="targeting-hud">
+        <!-- 50 Job Goal Card -->
+        <div class="hud-card">
+            <div class="hud-title">
+                <span>💼 Job Application Objective</span>
+                <span class="hud-badge badge-goal">Target: 50 Easy Apply</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Successful Submission Target:</span>
+                <span class="metric-value" style="color: #10b981;">50 / day</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Provider Safety Ceiling:</span>
+                <span class="metric-value">60 attempts / day</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Easy Apply Priority:</span>
+                <span class="metric-value" style="color: #10b981;">Required & Prioritized</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Min Match Floor:</span>
+                <span class="metric-value">>= 70% (Mandatory)</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Continuous Discovery:</span>
+                <span class="metric-value">Active until 50 or safe exhaustion</span>
+            </div>
+        </div>
+
+        <!-- Connection Quota Card -->
+        <div class="hud-card">
+            <div class="hud-title">
+                <span>🤝 LinkedIn Connections</span>
+                <span class="hud-badge badge-active">Cap: 40 / day</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Daily Provider Limit:</span>
+                <span class="metric-value">40 / calendar day</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Prospect Score Floor:</span>
+                <span class="metric-value">>= 75 (Explainable Fit)</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Hard Exclusions:</span>
+                <span class="metric-value">Enforced (Score Override)</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Backlog Override:</span>
+                <span class="metric-value" style="color: #3b82f6;">Active (326 Provider Cache)</span>
+            </div>
+        </div>
+
+        <!-- Active Targeting Versions Card -->
+        <div class="hud-card">
+            <div class="hud-title">
+                <span>📜 Active Versions</span>
+                <button onclick="rollbackLast()" class="btn-secondary-action" style="padding: 4px 8px; font-size: 11px;">⏪ Rollback</button>
+            </div>
+            {% if active_versions %}
+                {% for ver in active_versions %}
+                    <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 8px;">
+                        <div style="font-weight: 700; font-size: 12px; color: #0f172a;">{{ ver.get_config_type_display }} (v{{ ver.version_number }})</div>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">{{ ver.campaign.name|default:"Global Settings" }}</div>
+                        <div style="font-size: 11px; color: #10b981; margin-top: 4px;">Active • {{ ver.created_at|date:"M d, H:i" }}</div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div style="font-size: 12px; color: #64748b;">No versioned targeting snapshots saved yet.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+let lastPayload = null;
+
+function getCsrfToken() {
+    const name = 'csrftoken';
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    if (cookieValue) return cookieValue;
+    const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    if (input && input.value) return input.value;
+    return "{{ csrf_token }}";
+}
+
+function securePost(url, payload) {
+    return fetch(url, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrfToken()
+        },
+        body: JSON.stringify(payload)
+    });
+}
+
+function sendChipText(txt) {
+    document.getElementById("chatInput").value = txt;
+    sendTargetingMessage();
+}
+
+function appendMessage(role, text, payload) {
+    const stream = document.getElementById("chatStream");
+    const bubble = document.createElement("div");
+    bubble.className = "msg-bubble " + role;
+    bubble.innerHTML = text.replace(/\n/g, "<br>");
+
+    if (role === "assistant" && payload && (payload.intent_type === "prospect_icp" || payload.intent_type === "job_target" || payload.intent_type === "create_campaign")) {
+        lastPayload = payload;
+        const actionDiv = document.createElement("div");
+        actionDiv.className = "preview-actions";
+        actionDiv.innerHTML = `
+            <button class="btn-activate" onclick="activateCurrentPayload()">✓ Activate Targeting</button>
+            <button class="btn-secondary-action" onclick="previewCurrentMatches()">👥 Preview Matches</button>
+        `;
+        bubble.appendChild(actionDiv);
+    }
+
+    stream.appendChild(bubble);
+    stream.scrollTop = stream.scrollHeight;
+}
+
+function sendTargetingMessage() {
+    const input = document.getElementById("chatInput");
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    appendMessage("operator", msg, null);
+    input.value = "";
+
+    const campId = document.getElementById("campaignSelector").value;
+
+    securePost("{% url 'dashboard:targeting_assistant_chat' %}", {
+        message: msg,
+        campaign_id: campId || null
+    })
+    .then(r => {
+        if (!r.ok) {
+            return r.json().catch(() => ({ error: `HTTP ${r.status}` }));
+        }
+        return r.json();
+    })
+    .then(data => {
+        if (data.status === "ok") {
+            appendMessage("assistant", data.reply, data.payload);
+        } else {
+            appendMessage("assistant", "⚠️ Error: " + (data.error || "Failed to process message"), null);
+        }
+    })
+    .catch(err => {
+        appendMessage("assistant", "⚠️ Connection error: " + err, null);
+    });
+}
+
+function activateCurrentPayload() {
+    if (!lastPayload) return;
+    securePost("{% url 'dashboard:targeting_assistant_activate' %}", {
+        config_data: lastPayload,
+        campaign_id: lastPayload.campaign_id,
+        config_type: lastPayload.intent_type,
+        operator_prompt: "Activated via UI"
+    })
+    .then(r => {
+        if (!r.ok) {
+            return r.json().catch(() => ({ error: `HTTP ${r.status}` }));
+        }
+        return r.json();
+    })
+    .then(data => {
+        if (data.status === "ok") {
+            appendMessage("assistant", "✅ " + data.message, null);
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            appendMessage("assistant", "⚠️ Activation failed: " + (data.error || "Unknown error"), null);
+        }
+    })
+    .catch(err => {
+        appendMessage("assistant", "⚠️ Connection error: " + err, null);
+    });
+}
+
+function previewCurrentMatches() {
+    if (!lastPayload) return;
+    const pType = lastPayload.intent_type === "job_target" ? "jobs" : "prospects";
+    securePost("{% url 'dashboard:targeting_assistant_preview' %}", {
+        preview_type: pType,
+        config_data: lastPayload,
+        campaign_id: lastPayload.campaign_id
+    })
+    .then(r => {
+        if (!r.ok) {
+            return r.json().catch(() => ({ error: `HTTP ${r.status}` }));
+        }
+        return r.json();
+    })
+    .then(data => {
+        if (data.status === "ok" && data.matches && data.matches.length > 0) {
+            let previewText = "👥 **SAMPLE READ-ONLY MATCHES:**\n";
+            data.matches.forEach(m => {
+                if (pType === "prospects") {
+                    previewText += `• **${m.name}** (${m.title} @ ${m.company}) — Score: ${m.score}/100 (${m.is_qualified ? 'Eligible' : 'Skipped'})\n`;
+                } else {
+                    previewText += `• **${m.title}** @ ${m.company} (${m.location}) — Match: ${m.match_score}%\n`;
+                }
+            });
+            appendMessage("assistant", previewText, null);
+        } else {
+            appendMessage("assistant", "No matches found in local preview sample.", null);
+        }
+    })
+    .catch(err => {
+        appendMessage("assistant", "⚠️ Connection error: " + err, null);
+    });
+}
+
+function rollbackLast() {
+    securePost("{% url 'dashboard:targeting_assistant_rollback' %}", {})
+    .then(r => {
+        if (!r.ok) {
+            return r.json().catch(() => ({ error: `HTTP ${r.status}` }));
+        }
+        return r.json();
+    })
+    .then(data => {
+        if (data.status === "ok") {
+            appendMessage("assistant", "⏪ " + data.message, null);
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            appendMessage("assistant", "⚠️ Rollback failed: " + data.message, null);
+        }
+    })
+    .catch(err => {
+        appendMessage("assistant", "⚠️ Connection error: " + err, null);
+    });
+}
+</script>
+{% endblock %}

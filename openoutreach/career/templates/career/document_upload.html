@@ -1,0 +1,52 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Upload Candidate Document{% endblock %}
+
+{% block page_title %}Upload Candidate Document{% endblock %}
+{% block page_subtitle %}Files are stored in private media, verified for size and MIME signatures.{% endblock %}
+
+{% block main_content %}
+<div class="card" style="padding: 24px; max-width: 600px;">
+    <div>
+        <a href="{% url 'career:overview' %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline; display: block; margin-bottom: 20px;">
+            &larr; Back to Career Overview
+        </a>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            {% for field in form %}
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 13px; font-weight: 600; color: #475569;">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <span style="font-size: 11px; color: #64748b;">{{ field.help_text }}</span>
+                {% endif %}
+                {% if field.errors %}
+                    <span style="font-size: 12px; color: #ef4444;">{{ field.errors.0 }}</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; font-size: 12px; color: #475569; margin-top: 8px;">
+                <strong>Upload Guidelines:</strong>
+                <ul style="margin: 4px 0 0 0; padding-left: 20px; line-height: 1.5;">
+                    <li>Supported formats: PDF, DOCX, TXT, MD.</li>
+                    <li>Maximum allowed file size: 5MB.</li>
+                    <li>Files are verified for type and structural signatures upon arrival.</li>
+                </ul>
+            </div>
+
+            <div style="margin-top: 12px; display: flex; gap: 12px;">
+                <button type="submit" class="btn btn-primary">
+                    Upload & Verify Document
+                </button>
+                <a href="{% url 'career:overview' %}" class="btn">
+                    Cancel
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

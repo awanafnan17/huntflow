@@ -1,0 +1,23 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Target Imports{% endblock %}
+{% block main_content %}
+<div class="card p-4">
+  <h2>Target Imports ({{ workspace.name }})</h2>
+  <a href="{% url 'dashboard:import_upload' workspace.id %}" class="btn btn-sm btn-primary mb-3">Upload New CSV</a>
+  <table class="table">
+    <thead><tr><th>Name</th><th>File</th><th>Total Rows</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for imp in imports %}
+      <tr>
+        <td>{{ imp.name }}</td>
+        <td>{{ imp.file_name }}</td>
+        <td>{{ imp.total_rows }}</td>
+        <td><span class="badge bg-info">{{ imp.status }}</span></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4">No imports performed yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

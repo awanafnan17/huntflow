@@ -1,0 +1,45 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Paste Raw CV Text{% endblock %}
+
+{% block page_title %}Paste Raw CV Text{% endblock %}
+{% block page_subtitle %}Paste your raw resume text to trigger extraction of work experience, education, skills, and certifications.{% endblock %}
+
+{% block main_content %}
+<div class="card" style="padding: 24px; max-width: 800px;">
+    <div>
+        <a href="{% url 'career:overview' %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline; display: block; margin-bottom: 20px;">
+            &larr; Back to Career Overview
+        </a>
+    </div>
+
+    <form method="POST" action="{% url 'career:raw_cv_input' %}">
+        {% csrf_token %}
+
+        {% if form.errors %}
+        <div class="alert alert-error" style="margin-bottom: 20px;">
+            <strong>Please correct the errors below:</strong>
+            <ul style="margin: 4px 0 0 0; padding-left: 20px;">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #334155;">Raw CV Text:</label>
+            {{ form.raw_text }}
+            <p style="font-size: 12px; color: #64748b; margin-top: 4px;">{{ form.raw_text.help_text }}</p>
+        </div>
+
+        <div>
+            <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 14px; font-weight: bold;">
+                Parse & Extract Facts
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

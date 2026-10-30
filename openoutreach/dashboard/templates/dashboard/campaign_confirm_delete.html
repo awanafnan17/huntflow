@@ -1,0 +1,28 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Delete Campaign{% endblock %}
+
+{% block page_title %}Delete Campaign{% endblock %}
+{% block page_subtitle %}Confirm deletion of campaigns and clean task queues.{% endblock %}
+
+{% block main_content %}
+<div class="card settings-card" style="border-color: #ef4444;">
+    <h2 class="card-title" style="color: #ef4444;">Warning: Permanent Action</h2>
+    
+    <div class="alert alert-info" style="border-color: #ef4444; color: #ef4444; background-color: #fef2f2;">
+        This will delete this campaign and its related pending task queue entries. It may also delete campaign-linked deals if the database model cascades them.
+    </div>
+    
+    <p style="margin-bottom: 24px; font-size: 14px; color: #1e293b;">
+        Are you sure you want to delete campaign <strong>{{ campaign.name }}</strong>? This action cannot be undone.
+    </p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div style="display: flex; gap: 12px;">
+            <button type="submit" class="btn btn-primary" style="background-color: #ef4444; border-color: #ef4444;">Delete Permanently</button>
+            <a href="{% url 'dashboard:campaigns' %}" class="btn">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

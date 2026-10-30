@@ -1,0 +1,13 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Upload Target CSV{% endblock %}
+{% block main_content %}
+<div class="card p-4">
+  <h2>Upload Target CSV</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="mb-3"><label>Import Name</label><input type="text" name="name" class="form-control" required></div>
+    <div class="mb-3"><label>CSV File</label><input type="file" name="csv_file" class="form-control" accept=".csv" required></div>
+    <button type="submit" class="btn btn-primary">Upload & Configure Mapping</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,337 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Campaign Targets Review: {{ campaign.name }}{% endblock %}
+
+{% block page_title %}Review Campaign Targets: {{ campaign.name }}{% endblock %}
+{% block page_subtitle %}Review generated drafts, validation results, and manage target approvals.{% endblock %}
+
+{% block main_content %}
+<div class="toolbar">
+    <a href="{% url 'dashboard:campaigns' %}" class="btn" style="border-color: #cbd5e1; background: transparent; margin-right: 8px;">&larr; Back to Campaigns</a>
+    <div style="flex: 1;"></div>
+    <span class="badge badge-primary">Type: {{ campaign.get_campaign_type_display }}</span>
+</div>
+
+{% if messages %}
+    {% for msg in messages %}
+        <div class="alert {% if msg.tags == 'error' %}alert-danger{% else %}alert-info{% endif %}" style="margin-bottom: 16px; padding: 12px; border-radius: 6px;">
+            {{ msg }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="card" style="margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; background: #ffffff;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 12px;">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">🎯 Campaign Targeting & Discovery Parameters</h3>
+        <form method="post" style="margin: 0;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="generate_targets">
+            <button type="submit" class="btn btn-primary" style="font-size: 13px; padding: 8px 16px;">
+                ⚡ Generate & Discover Targets (AI)
+            </button>
+        </form>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 13px;">
+        <div>
+            <span style="color: #64748b; display: block; font-size: 11px; font-weight: 600; text-transform: uppercase;">Job Titles</span>
+            <strong style="color: #1e293b;">{{ campaign.target_job_titles|default:"Not specified" }}</strong>
+        </div>
+        <div>
+            <span style="color: #64748b; display: block; font-size: 11px; font-weight: 600; text-transform: uppercase;">Seniority</span>
+            <strong style="color: #1e293b;">{{ campaign.target_seniority|default:"Not specified" }}</strong>
+        </div>
+        <div>
+            <span style="color: #64748b; display: block; font-size: 11px; font-weight: 600; text-transform: uppercase;">Industries</span>
+            <strong style="color: #1e293b;">{{ campaign.target_industries|default:"Not specified" }}</strong>
+        </div>
+        <div>
+            <span style="color: #64748b; display: block; font-size: 11px; font-weight: 600; text-transform: uppercase;">Locations</span>
+            <strong style="color: #1e293b;">{{ campaign.target_locations|default:"Not specified" }}</strong>
+        </div>
+    </div>
+    {% if search_keywords %}
+    <div style="margin-top: 16px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+        <span style="color: #64748b; display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Persisted Target Search Queries ({{ search_keywords|length }})</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            {% for sk in search_keywords %}
+            <span style="background: #f1f5f9; color: #334155; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 12px; border: 1px solid #cbd5e1;">
+                🔍 {{ sk.keyword }} {% if sk.used %}<span style="color: #059669;">(Used)</span>{% endif %}
+            </span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if preflight_status %}
+<div class="card" style="margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; background: #ffffff;">
+    <h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; display: flex; justify-content: space-between;">
+        <span>⚙️ Campaign Preflight & Resume Readiness</span>
+        <div style="display: flex; gap: 8px; font-size: 12px;">
+            <span style="padding: 2px 8px; border-radius: 4px; font-weight: 700; background: {% if preflight_status.discovery_ready %}#dcfce7; color: #166534;{% else %}#fef2f2; color: #991b1b;{% endif %}">
+                Discovery Ready: {% if preflight_status.discovery_ready %}YES{% else %}NO{% endif %}
+            </span>
+            <span style="padding: 2px 8px; border-radius: 4px; font-weight: 700; background: {% if preflight_status.outreach_ready %}#dcfce7; color: #166534;{% else %}#fef2f2; color: #991b1b;{% endif %}">
+                Outreach Ready: {% if preflight_status.outreach_ready %}YES{% else %}NO{% endif %}
+            </span>
+        </div>
+    </h4>
+    
+    {% if preflight_status.icp_validation and preflight_status.icp_validation.warnings %}
+        <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 10px; border-radius: 6px; font-size: 12px; color: #92400e; margin-bottom: 8px;">
+            <strong>⚠️ ICP Target Configuration Warning:</strong>
+            <ul style="margin: 4px 0 0 0; padding-left: 16px;">
+                {% for w in preflight_status.icp_validation.warnings %}
+                    <li>{{ w }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <div style="font-size: 11px; color: #64748b;">
+        <strong>Readiness Details:</strong> {{ preflight_status.reasons|join:" • " }}
+    </div>
+</div>
+{% endif %}
+
+{% if summary_stats %}
+<div class="card" style="margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; background: #ffffff;">
+    <h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">📊 Campaign Target Discovery & Quality Summary</h4>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; text-align: center;">
+        <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b;">Discovered</div>
+            <div style="font-size: 18px; font-weight: 800; color: #0f172a;">{{ summary_stats.total_deals }}</div>
+        </div>
+        <div style="background: #f0fdf4; padding: 10px; border-radius: 6px; border: 1px solid #bbf7d0;">
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #166534;">Fully Enriched</div>
+            <div style="font-size: 18px; font-weight: 800; color: #15803d;">{{ summary_stats.fully_enriched }}</div>
+        </div>
+        <div style="background: #fefce8; padding: 10px; border-radius: 6px; border: 1px solid #fef08a;">
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #854d0e;">Partially Enriched</div>
+            <div style="font-size: 18px; font-weight: 800; color: #ca8a04;">{{ summary_stats.partially_enriched }}</div>
+        </div>
+        <div style="background: #fef2f2; padding: 10px; border-radius: 6px; border: 1px solid #fecaca;">
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #991b1b;">Enrichment Failed</div>
+            <div style="font-size: 18px; font-weight: 800; color: #dc2626;">{{ summary_stats.enrichment_failed }}</div>
+        </div>
+        <div style="background: #f0fdf4; padding: 10px; border-radius: 6px; border: 1px solid #bbf7d0;">
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #166534;">Strong Fits</div>
+            <div style="font-size: 18px; font-weight: 800; color: #15803d;">{{ summary_stats.strong_fits }}</div>
+        </div>
+        <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #475569;">Needs Review</div>
+            <div style="font-size: 18px; font-weight: 800; color: #334155;">{{ summary_stats.needs_review }}</div>
+        </div>
+        <div style="background: #dcfce7; padding: 10px; border-radius: 6px; border: 1px solid #86efac;">
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #166534;">Ready To Connect</div>
+            <div style="font-size: 18px; font-weight: 800; color: #15803d;">{{ summary_stats.ready_to_connect }}</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 16px;">
+    {% for deal in deals %}
+    <div class="card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 16px;">
+            <div>
+                <h3 style="margin: 0; font-size: 18px; color: #1e293b;">{{ deal.lead.first_name }} {{ deal.lead.last_name }}</h3>
+                <p style="margin: 4px 0 0 0; font-size: 14px; color: #64748b;">{{ deal.lead.current_title }} at <strong>{{ deal.lead.company }}</strong></p>
+                <a href="{{ deal.lead.linkedin_url }}" target="_blank" style="font-size: 12px; color: #0284c7; text-decoration: none;">View LinkedIn Profile &rarr;</a>
+            </div>
+            <div>
+                <span class="badge {% if deal.manual_review_status == 'approved' %}badge-success{% elif deal.manual_review_status == 'rejected' %}badge-danger{% else %}badge-warning{% endif %}">
+                    Review Status: {{ deal.get_manual_review_status_display }}
+                </span>
+                <div style="font-size: 11px; color: #94a3b8; text-align: right; margin-top: 4px;">
+                    Sendable: <strong style="color: {% if deal.sendable %}#15803d{% else %}#b91c1c{% endif %};">{{ deal.sendable }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+            <!-- Message Editor / View -->
+            <div>
+                <form action="{% url 'dashboard:deal_review_action' deal.pk %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="edit">
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-weight: 600; font-size: 13px; color: #475569; margin-bottom: 6px;">Generated Connection Note</label>
+                        <textarea name="connection_note" rows="4" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; font-family: inherit; font-size: 14px; color: #334155;">{{ deal.generated_connection_note }}</textarea>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-weight: 600; font-size: 13px; color: #475569; margin-bottom: 6px;">Generated Follow-up Message</label>
+                        <textarea name="follow_up" rows="4" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; font-family: inherit; font-size: 14px; color: #334155;">{{ deal.generated_follow_up }}</textarea>
+                    </div>
+                    <button type="submit" class="btn" style="font-size: 13px; padding: 6px 12px; border-color: #0284c7; color: #0284c7; background: transparent;">Save Edits</button>
+                </form>
+            </div>
+
+            <!-- Validation Results & Metadata -->
+            <div style="background: #f8fafc; border-radius: 6px; padding: 16px; border: 1px solid #e2e8f0;">
+                <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #334155; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">Safety & Verification Audits</h4>
+                
+                <div style="margin-bottom: 12px;">
+                    <strong style="font-size: 12px; color: #475569; display: block;">Style Validator</strong>
+                    {% if deal.style_valid %}
+                        <span style="color: #15803d; font-size: 12px; font-weight: 600;">&check; Passed</span>
+                    {% else %}
+                        <span style="color: #b91c1c; font-size: 12px; font-weight: 600;">&times; Failed</span>
+                        <ul style="margin: 4px 0 0 0; padding-left: 16px; font-size: 11px; color: #b91c1c;">
+                            {% for err in deal.style_errors %}
+                                <li>{{ err }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <strong style="font-size: 12px; color: #475569; display: block;">Claims Validator</strong>
+                    {% if deal.claims_valid %}
+                        <span style="color: #15803d; font-size: 12px; font-weight: 600;">&check; Passed</span>
+                    {% else %}
+                        <span style="color: #b91c1c; font-size: 12px; font-weight: 600;">&times; Blocked</span>
+                        <ul style="margin: 4px 0 0 0; padding-left: 16px; font-size: 11px; color: #b91c1c;">
+                            {% for err in deal.claims_errors %}
+                                <li>{{ err }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div style="margin-bottom: 12px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px;">
+                    <strong style="font-size: 12px; color: #1e293b; display: block; margin-bottom: 6px;">🎯 ICP Quality Evaluation Breakdown</strong>
+                    {% if deal.icp_eval %}
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+                            <span style="font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 700; background: {% if deal.icp_eval.final_fit == 'STRONG' %}#dcfce7; color: #166534; border: 1px solid #86efac;{% elif deal.icp_eval.final_fit == 'POSSIBLE' %}#fefce8; color: #854d0e; border: 1px solid #fef08a;{% else %}#fef2f2; color: #991b1b; border: 1px solid #fecaca;{% endif %}">
+                                FINAL: {% if deal.icp_eval.final_fit == 'STRONG' %}STRONG FIT{% elif deal.icp_eval.final_fit == 'POSSIBLE' %}NEEDS REVIEW{% else %}REJECTED{% endif %}
+                            </span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px; margin-bottom: 8px;">
+                            <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                                <span style="color: #64748b; font-weight: 600; display: flex; justify-content: space-between;">
+                                    <span>Title:</span>
+                                    <span style="font-size: 9px; padding: 1px 4px; background: #e2e8f0; border-radius: 2px; color: #475569;">REQUIRED</span>
+                                </span>
+                                <span style="font-weight: 700; color: {% if deal.icp_eval.title_match == 'MATCH' %}#15803d{% elif deal.icp_eval.title_match == 'MISMATCH' %}#dc2626{% else %}#475569{% endif %};">
+                                    {{ deal.icp_eval.title_match }}
+                                </span>
+                            </div>
+                            <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                                <span style="color: #64748b; font-weight: 600; display: flex; justify-content: space-between;">
+                                    <span>Seniority:</span>
+                                    <span style="font-size: 9px; padding: 1px 4px; background: #e2e8f0; border-radius: 2px; color: #475569;">REQUIRED</span>
+                                </span>
+                                <span style="font-weight: 700; color: {% if deal.icp_eval.seniority_match == 'MATCH' %}#15803d{% elif deal.icp_eval.seniority_match == 'MISMATCH' %}#dc2626{% else %}#475569{% endif %};">
+                                    {{ deal.icp_eval.seniority_match }} ({{ deal.icp_eval.extracted_seniority }})
+                                </span>
+                            </div>
+                            <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                                <span style="color: #64748b; font-weight: 600; display: flex; justify-content: space-between;">
+                                    <span>Location:</span>
+                                    <span style="font-size: 9px; padding: 1px 4px; background: #e2e8f0; border-radius: 2px; color: #475569;">REQUIRED</span>
+                                </span>
+                                <span style="font-weight: 700; color: {% if deal.icp_eval.location_match == 'MATCH' %}#15803d{% elif deal.icp_eval.location_match == 'MISMATCH' %}#dc2626{% else %}#475569{% endif %};">
+                                    {{ deal.icp_eval.location_match }}
+                                </span>
+                            </div>
+                            <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                                <span style="color: #64748b; font-weight: 600; display: flex; justify-content: space-between;">
+                                    <span>Industry:</span>
+                                    <span style="font-size: 9px; padding: 1px 4px; background: {% if campaign.require_industry_match %}#e2e8f0{% else %}#f1f5f9{% endif %}; border-radius: 2px; color: #475569;">{% if campaign.require_industry_match %}REQUIRED{% else %}OPTIONAL{% endif %}</span>
+                                </span>
+                                <span style="font-weight: 700; color: {% if deal.icp_eval.industry_match == 'MATCH' %}#15803d{% elif deal.icp_eval.industry_match == 'MISMATCH' %}#dc2626{% else %}#475569{% endif %};">
+                                    {{ deal.icp_eval.industry_match }}
+                                </span>
+                            </div>
+                            <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; grid-column: span 2;">
+                                <span style="color: #64748b; font-weight: 600; display: flex; justify-content: space-between;">
+                                    <span>Company Size:</span>
+                                    <span style="font-size: 9px; padding: 1px 4px; background: {% if campaign.require_company_size_match %}#e2e8f0{% else %}#f1f5f9{% endif %}; border-radius: 2px; color: #475569;">{% if campaign.require_company_size_match %}REQUIRED{% else %}OPTIONAL{% endif %}</span>
+                                </span>
+                                <span style="font-weight: 700; color: {% if deal.icp_eval.company_size_match == 'MATCH' %}#15803d{% elif deal.icp_eval.company_size_match == 'MISMATCH' %}#dc2626{% else %}#475569{% endif %};">
+                                    {{ deal.icp_eval.company_size_match }}
+                                </span>
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; color: #475569; line-height: 1.3; background: #f1f5f9; padding: 6px; border-radius: 4px;">
+                            <strong>Detailed Reason:</strong> {{ deal.reason }}
+                        </div>
+                    {% else %}
+                        <div style="font-size: 11px; color: #94a3b8;">No evaluation metadata recorded.</div>
+                    {% endif %}
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <strong style="font-size: 12px; color: #475569; display: block;">Identity & Hold</strong>
+                    <div style="font-size: 12px; color: #334155;">
+                        Candidate Identity: <strong>{{ deal.identity_status }}</strong><br>
+                        Incident Hold: <strong>{% if deal.incident_hold_active %}<span style="color: #b91c1c;">Active</span>{% else %}Preserved{% endif %}</strong>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <strong style="font-size: 12px; color: #475569; display: block;">Duplication & Suppression</strong>
+                    <div style="font-size: 12px; color: #334155;">
+                        Duplicate: <strong>{% if deal.is_duplicate %}<span style="color: #b91c1c;">Yes ({{ deal.other_deals_count }} campaigns)</span>{% else %}No{% endif %}</strong><br>
+                        Suppressed: <strong>{% if deal.is_suppressed %}<span style="color: #b91c1c;">Yes</span>{% else %}No{% endif %}</strong>
+                    </div>
+                </div>
+
+                {% if deal.contact_history %}
+                <div style="margin-bottom: 12px;">
+                    <strong style="font-size: 12px; color: #475569; display: block;">Contact History</strong>
+                    <ul style="margin: 4px 0 0 0; padding-left: 16px; font-size: 11px; color: #475569;">
+                        {% for hist in deal.contact_history %}
+                            <li>Campaign: {{ hist.0 }} ({{ hist.1 }})</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Operator Actions -->
+        <div style="display: flex; gap: 8px; margin-top: 16px; border-top: 1px solid #f1f5f9; padding-top: 12px; justify-content: flex-end;">
+            <form action="{% url 'dashboard:deal_review_action' deal.pk %}" method="post" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="approve">
+                <button type="submit" class="btn btn-primary" style="font-size: 13px; padding: 6px 12px;" {% if deal.manual_review_status == 'approved' %}disabled{% endif %}>
+                    Approve for Future Pilot
+                </button>
+            </form>
+
+            <button type="button" class="btn" style="border-color: #ef4444; color: #ef4444; background: transparent; font-size: 13px; padding: 6px 12px;" onclick="document.getElementById('reject-form-{{ deal.pk }}').style.display='flex';">
+                Reject Target
+            </button>
+
+            <form action="{% url 'dashboard:deal_review_action' deal.pk %}" method="post" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="suppress">
+                <button type="submit" class="btn" style="border-color: #64748b; color: #64748b; background: transparent; font-size: 13px; padding: 6px 12px;">
+                    Suppress Recipient
+                </button>
+            </form>
+        </div>
+
+        <!-- Reject Form Drawer -->
+        <div id="reject-form-{{ deal.pk }}" style="display: none; flex-direction: column; gap: 8px; margin-top: 12px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 6px; padding: 12px;">
+            <form action="{% url 'dashboard:deal_review_action' deal.pk %}" method="post" style="margin: 0; width: 100%;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reject">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #9f1239; margin-bottom: 4px;">Rejection Reason</label>
+                <input type="text" name="reason" placeholder="Explain why this target is rejected..." style="width: 100%; border: 1px solid #fda4af; border-radius: 4px; padding: 6px; font-size: 13px; margin-bottom: 8px;" required>
+                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                    <button type="button" class="btn" style="padding: 4px 8px; font-size: 12px;" onclick="document.getElementById('reject-form-{{ deal.pk }}').style.display='none';">Cancel</button>
+                    <button type="submit" class="btn" style="background: #e11d48; color: #fff; padding: 4px 8px; font-size: 12px; border: none;">Confirm Rejection</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% empty %}
+    <div style="text-align: center; padding: 48px; border: 2px dashed #cbd5e1; border-radius: 8px; color: #64748b;">
+        No targets found for this campaign yet.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

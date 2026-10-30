@@ -1,0 +1,264 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Daemon Status & Process Control{% endblock %}
+
+{% block page_title %}Daemon Status & Process Control{% endblock %}
+{% block page_subtitle %}Monitor active scheduler loop, background process state, and live logging feedback.{% endblock %}
+
+{% block main_content %}
+<div style="display: flex; flex-direction: column; gap: 24px;">
+    <div>
+        <a href="{% url 'dashboard:operations' %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline;">
+            &larr; View Operations Console
+        </a>
+    </div>
+
+    {# Diagnostics Blockers Panel #}
+    {% if blockers %}
+    <div class="card" style="border-left: 4px solid #ef4444; background-color: #fef2f2;">
+        <h3 class="card-title" style="color: #991b1b; margin-bottom: 8px;">Active Launch Blockers</h3>
+        <ul style="margin: 0; padding-left: 20px; color: #7f1d1d; font-size: 13px; line-height: 1.6;">
+            {% for blocker in blockers %}
+                <li>{{ blocker }}</li>
+            {% endfor %}
+        </ul>
+        <div style="margin-top: 12px;">
+            <a href="{% url 'dashboard:readiness' %}" style="color: #b91c1c; text-decoration: underline; font-size: 13px; font-weight: bold;">
+                View Guided Fixes in Launch Readiness Page &rarr;
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="metrics-grid" style="margin-bottom: 0;">
+        <div class="card metric-card">
+            <span class="metric-label">Execution Loop Status</span>
+            <span class="metric-value {% if daemon_active == 'running' %}text-success{% elif daemon_active == 'unknown' %}text-warning{% else %}text-danger{% endif %}" style="font-weight: bold;">
+                {% if daemon_active == 'running' %}
+                    Running
+                {% elif daemon_active == 'unknown' %}
+                    Unknown (Unverifiable)
+                {% else %}
+                    Stopped
+                {% endif %}
+            </span>
+        </div>
+        <div class="card metric-card">
+            <span class="metric-label">Pending Tasks Queue</span>
+            <span class="metric-value">{{ pending_tasks }}</span>
+        </div>
+        <div class="card metric-card">
+            <span class="metric-label">Failed Tasks Count</span>
+            <span class="metric-value text-danger">{{ failed_tasks }}</span>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+        {# Process Metadata Card #}
+        <div class="card">
+            <h2 class="card-title">Process Information</h2>
+            <div class="detail-row">
+                <span class="detail-label">Daemon PID</span>
+                <span class="detail-value">{{ daemon_status.pid|default:"None" }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Last Heartbeat</span>
+                <span class="detail-value">
+                    {% if daemon_status.last_heartbeat %}
+                        {{ daemon_status.last_heartbeat|date:"Y-m-d H:i:s" }} UTC
+                    {% else %}
+                        No heartbeat recorded.
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Active LinkedIn Account</span>
+                <span class="detail-value">{{ daemon_status.active_profile_username|default:active_profile|default:"None configured" }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Last Action Timestamp</span>
+                <span class="detail-value">
+                    {% if last_action_time %}
+                        {{ last_action_time|date:"Y-m-d H:i:s" }} UTC
+                    {% else %}
+                        No operations recorded yet.
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Next Scheduled Operation</span>
+                <span class="detail-value" style="word-break: break-all;">
+                    {% if next_task %}
+                        <span class="badge badge-info">{{ next_task.task_type }}</span>
+                        at {{ next_task.scheduled_at|date:"H:i:s" }} UTC
+                    {% else %}
+                        Queue empty.
+                    {% endif %}
+                </span>
+            </div>
+            {% if daemon_status.last_error %}
+            <div style="margin-top: 16px; padding: 12px; background-color: #fff5f5; border: 1px solid #fed7d7; border-radius: 6px; font-size: 12px; color: #c53030;">
+                <strong>Last Error:</strong> {{ daemon_status.last_error }}
+            </div>
+            {% endif %}
+        </div>
+
+        {# Controls Card #}
+        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <h2 class="card-title">Process Controls</h2>
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; line-height: 1.5;">
+                    Manage the background scheduler execution state. Start or stop the daemon safely. Duplicate process launches are prevented automatically.
+                    <br><br>
+                    <a href="{% url 'dashboard:launch_preview' %}" style="color: #2563eb; text-decoration: underline; font-weight: bold;">
+                        Preview Daemon Execution Tasks &rarr;
+                    </a>
+                </p>
+            </div>
+            
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
+                <form method="post" style="margin: 0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="start">
+                    <button type="submit" class="btn btn-primary" {% if daemon_active or has_hard_blockers %}disabled{% endif %}>
+                        Start Daemon
+                    </button>
+                </form>
+                <form method="post" style="margin: 0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="stop">
+                    <button type="submit" class="btn" {% if not daemon_active %}disabled{% endif %}>
+                        Stop Daemon
+                    </button>
+                </form>
+                <form method="post" style="margin: 0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="restart">
+                    <button type="submit" class="btn" style="background-color: #f1f5f9; color: #1e293b;">
+                        Restart Daemon
+                    </button>
+                </form>
+                <a href="{% url 'dashboard:daemon' %}" class="btn" style="background-color: #ffffff; border: 1px solid #cbd5e1; color: #475569;">
+                    Refresh
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {# Latest Launch Run Summary Card #}
+    {% if latest_launch_run %}
+    <div class="card" style="margin-top: -12px;">
+        <h2 class="card-title">Latest Live Launch Run (#{{ latest_launch_run.id }})</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; font-size: 13px; margin-top: 12px; margin-bottom: 12px;">
+            <div>
+                <span style="color: #64748b;">Run Status:</span>
+                <span class="badge {% if latest_launch_run.status == 'running' %}badge-success{% elif latest_launch_run.status == 'blocked' %}badge-danger{% else %}badge-secondary{% endif %}" style="font-size: 11px;">
+                    {{ latest_launch_run.status|upper }}
+                </span>
+            </div>
+            <div>
+                <span style="color: #64748b;">Trigger Source:</span>
+                <strong>{{ latest_launch_run.source|capfirst }}</strong>
+            </div>
+            <div>
+                <span style="color: #64748b;">Trigger Operator:</span>
+                <strong>{{ latest_launch_run.operator.username|default:"System" }}</strong>
+            </div>
+            <div>
+                <span style="color: #64748b;">Started At:</span>
+                <strong>{{ latest_launch_run.started_at|date:"Y-m-d H:i:s"|default:"-" }} UTC</strong>
+            </div>
+            {% if latest_launch_run.daemon_pid %}
+                <div>
+                    <span style="color: #64748b;">Daemon PID:</span>
+                    <strong style="font-family: monospace;">{{ latest_launch_run.daemon_pid }}</strong>
+                </div>
+            {% endif %}
+            {% if latest_launch_run.stop_reason %}
+                <div>
+                    <span style="color: #64748b;">Stop/End Reason:</span>
+                    <strong style="color: #64748b;">{{ latest_launch_run.stop_reason }}</strong>
+                </div>
+            {% endif %}
+        </div>
+        <div style="text-align: right; border-top: 1px solid #f1f5f9; padding-top: 12px; margin-top: 12px;">
+            <a href="{% url 'dashboard:launch_history_detail' pk=latest_launch_run.id %}" style="font-size: 12px; color: #2563eb; font-weight: bold; text-decoration: underline;">Inspect Session Details &rarr;</a>
+        </div>
+    </div>
+    {% endif %}
+
+    {# Live Logs View #}
+    <div class="card">
+        <h2 class="card-title">Latest Execution Log Lines (daemon.log)</h2>
+        {% if log_lines %}
+            <pre style="background-color: #0f172a; color: #cbd5e1; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 12px; line-height: 1.5; max-height: 350px; overflow-y: auto; overflow-x: auto; white-space: pre-wrap; margin: 0;">{% for line in log_lines %}{{ line }}
+{% endfor %}</pre>
+        {% else %}
+            <div style="padding: 32px; text-align: center; color: #94a3b8; background-color: #f8fafc; border-radius: 8px; border: 1px dashed #e2e8f0; font-size: 13px;">
+                No execution logs found. Start the daemon process to begin logging.
+            </div>
+        {% endif %}
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+        {# Recent Action Logs #}
+        <div class="card">
+            <h2 class="card-title">Recent Activity Logs</h2>
+            <div class="table-container" style="box-shadow: none; border: 1px solid #f1f5f9; border-radius: 6px; overflow: hidden;">
+                <table class="data-table" style="font-size: 12px;">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Action</th>
+                            <th>Outcome</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in recent_actions %}
+                        <tr>
+                            <td>{{ log.created_at|date:"H:i:s" }}</td>
+                            <td><span class="badge badge-info">{{ log.action_type }}</span></td>
+                            <td>{{ log.outcome|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: #94a3b8;">No activity logged yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# Recent Task Failures #}
+        <div class="card">
+            <h2 class="card-title">Recent Task Failures</h2>
+            <div class="table-container" style="box-shadow: none; border: 1px solid #f1f5f9; border-radius: 6px; overflow: hidden;">
+                <table class="data-table" style="font-size: 12px;">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Task Type</th>
+                            <th style="text-align: right;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in recent_failures %}
+                        <tr>
+                            <td>{{ task.completed_at|date:"Y-m-d H:i" }}</td>
+                            <td><span class="badge badge-secondary">{{ task.task_type }}</span></td>
+                            <td style="text-align: right;"><span class="badge badge-danger">FAILED</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: #94a3b8; padding: 12px;">No task failures recorded.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

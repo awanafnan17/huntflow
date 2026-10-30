@@ -1,0 +1,190 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: huntflow_production_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-huntflow_prod}
+      POSTGRES_USER: ${POSTGRES_USER:-huntflow_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backups/postgres:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-huntflow_user} -d ${POSTGRES_DB:-huntflow_prod}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.60'
+          memory: 1024M
+    networks:
+      - huntflow_internal
+
+  redis:
+    image: redis:7-alpine
+    container_name: huntflow_production_redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 512M
+    networks:
+      - huntflow_internal
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: huntflow_production_ollama
+    restart: always
+    volumes:
+      - ollamadata:/root/.ollama
+    deploy:
+      resources:
+        limits:
+          cpus: '0.90'
+          memory: 3072M
+    networks:
+      - huntflow_internal
+
+  web:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        - BUILD_ENV=production
+    container_name: huntflow_production_web
+    restart: always
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    ports:
+      - "127.0.0.1:18080:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: /start-web
+    volumes:
+      - media_data:/app/media
+      - private_media_data:/app/private_media
+      - static_data:/app/staticfiles
+      - ./data:/app/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.35'
+          memory: 1280M
+    networks:
+      - huntflow_internal
+
+  worker:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        - BUILD_ENV=production
+    container_name: huntflow_production_worker
+    restart: always
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: /start-worker
+    volumes:
+      - media_data:/app/media
+      - private_media_data:/app/private_media
+      - ./data:/app/data
+      - browser_data:/opt/pw-browsers
+    deploy:
+      resources:
+        limits:
+          cpus: '0.45'
+          memory: 1792M
+    networks:
+      - huntflow_internal
+
+  bootstrap:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        - BUILD_ENV=production
+    container_name: huntflow_production_bootstrap
+    restart: always
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    ports:
+      - "127.0.0.1:18081:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: /start-bootstrap
+    volumes:
+      - media_data:/app/media
+      - private_media_data:/app/private_media
+      - ./data:/app/data
+      - browser_data:/opt/pw-browsers
+    deploy:
+      resources:
+        limits:
+          cpus: '0.30'
+          memory: 1024M
+    networks:
+      - huntflow_internal
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        - BUILD_ENV=production
+    container_name: huntflow_production_scheduler
+    restart: always
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: /start-scheduler
+    volumes:
+      - media_data:/app/media
+      - ./data:/app/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.15'
+          memory: 512M
+    networks:
+      - huntflow_internal
+
+volumes:
+  pgdata:
+  redisdata:
+  ollamadata:
+  browser_data:
+  static_data:
+  media_data:
+  private_media_data:
+
+networks:
+  huntflow_internal:
+    driver: bridge
+

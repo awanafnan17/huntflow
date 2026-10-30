@@ -1,0 +1,62 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Email & Gmail Hub{% endblock %}
+{% block page_title %}Email Outreach & Gmail Integration{% endblock %}
+{% block page_subtitle %}Connect Google accounts, manage cold email campaigns, and import email lead lists.{% endblock %}
+
+{% block main_content %}
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+        <!-- Connected Google Accounts Card -->
+        <div class="card" style="background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="font-size: 18px; font-weight: 700; margin: 0;">🔌 Connected Google Accounts</h3>
+                <a href="{% url 'dashboard:gmail_connect' %}" class="btn btn-primary" style="background: #2563eb; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600;">+ Connect Gmail OAuth</a>
+            </div>
+
+            {% for acc in google_accounts %}
+                <div style="border: 1px solid #e2e8f0; padding: 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div>
+                        <strong style="font-size: 15px; color: #0f172a;">{{ acc.email }}</strong>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Connected: {{ acc.connected_at|date:"M d, Y" }} • Status: Active (OAuth 2.0)</div>
+                    </div>
+                    <span class="badge badge-success" style="background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700;">VALID TOKEN</span>
+                </div>
+            {% empty %}
+                <div style="text-align: center; padding: 32px; background: #f8fafc; border-radius: 8px; color: #64748b;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">✉️</div>
+                    <p style="margin: 0; font-weight: 600;">No Gmail Accounts Connected</p>
+                    <p style="font-size: 13px; margin-top: 4px;">Connect a Google account via OAuth 2.0 to automate cold email campaigns.</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Import Email Leads Card -->
+        <div class="card" style="background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h3 style="font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 16px;">📥 CSV Lead List Import</h3>
+            <form method="POST" action="{% url 'dashboard:import_email_leads' %}" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 16px;">
+                {% csrf_token %}
+                <input type="file" name="csv_file" accept=".csv" required style="padding: 10px; border: 1px dashed #cbd5e1; border-radius: 6px; background: #f8fafc;">
+                <button type="submit" class="btn btn-secondary" style="align-self: flex-start; background: #0f172a; color: white; padding: 10px 20px; border-radius: 6px; font-weight: 600; border: none; cursor: pointer;">Upload & Inspect CSV Leads</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right Sidebar Mailboxes & Stats -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+        <div class="card" style="background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h4 style="margin-top: 0; font-size: 15px; font-weight: 700;">SMTP Mailboxes</h4>
+            {% for mb in mailboxes %}
+                <div style="font-size: 13px; padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
+                    <strong>{{ mb.from_address }}</strong>
+                    <div style="color: #64748b; font-size: 11px;">Limit: {{ mb.daily_limit }}/day</div>
+                </div>
+            {% empty %}
+                <p style="font-size: 13px; color: #64748b;">No SMTP mailboxes configured.</p>
+            {% endfor %}
+            <a href="{% url 'dashboard:mailboxes' %}" style="display: inline-block; margin-top: 12px; font-size: 13px; font-weight: 600; color: #2563eb; text-decoration: none;">Manage Mailboxes →</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

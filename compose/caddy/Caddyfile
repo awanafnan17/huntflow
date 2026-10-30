@@ -1,0 +1,22 @@
+{$DOMAIN:localhost} {
+    encode gzip zstd
+
+    handle_path /static/* {
+        root * /var/www/static
+        file_server
+    }
+
+    handle_path /media/* {
+        root * /var/www/media
+        file_server
+    }
+
+    handle {
+        reverse_proxy web:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+}

@@ -1,0 +1,299 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Operations Console{% endblock %}
+
+{% block page_title %}Live Operations Console{% endblock %}
+{% block page_subtitle %}Real-time operational snapshot, health monitoring, and system queue diagnostics.{% endblock %}
+
+{% block main_content %}
+<div style="display: flex; flex-direction: column; gap: 24px;">
+
+    {# Operator Alerts Segment #}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: -12px;">
+        <h3 class="card-title" style="margin: 0; font-size: 16px;">Active Diagnostics</h3>
+        <form method="POST" action="{% url 'dashboard:operator_inbox_sync' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;">Sync Alerts with Operator Inbox</button>
+        </form>
+    </div>
+
+    {% if snapshot.alerts %}
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for alert in snapshot.alerts %}
+                <div class="card" style="border-left: 5px solid {% if alert.severity == 'hard' %}#ef4444{% elif alert.severity == 'warning' %}#f59e0b{% else %}#3b82f6{% endif %}; padding: 16px; background-color: {% if alert.severity == 'hard' %}#fef2f2{% elif alert.severity == 'warning' %}#fffbeb{% else %}#eff6ff{% endif %}; margin: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+                                <span class="badge {% if alert.severity == 'hard' %}badge-danger{% elif alert.severity == 'warning' %}badge-warning{% else %}badge-info{% endif %}" style="text-transform: uppercase; font-size: 10px; font-weight: bold;">
+                                    {{ alert.severity }} alert
+                                </span>
+                                <span class="badge {% if alert.inbox_status == 'active' or alert.inbox_status == 'new' %}badge-danger{% elif alert.inbox_status == 'acknowledged' %}badge-info{% elif alert.inbox_status == 'snoozed' %}badge-warning{% elif alert.inbox_status == 'dismissed' %}badge-secondary{% else %}badge-success{% endif %}" style="text-transform: capitalize; font-size: 10px;">
+                                    Inbox Status: {{ alert.inbox_status }}
+                                </span>
+                            </div>
+                            <h4 style="margin: 0 0 4px 0; color: #0f172a; font-size: 15px; font-weight: bold;">{{ alert.title }}</h4>
+                            <p style="margin: 0; color: #475569; font-size: 13px;">{{ alert.description }}</p>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            {% if alert.inbox_id %}
+                                <a href="{% url 'dashboard:operator_inbox_detail' pk=alert.inbox_id %}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; text-decoration: none;">
+                                    Manage Alert &rarr;
+                                </a>
+                            {% endif %}
+                            {% if alert.fix_link %}
+                                <a href="{{ alert.fix_link }}" class="btn {% if alert.severity == 'hard' %}btn-danger{% else %}btn-primary{% endif %}" style="padding: 6px 12px; font-size: 12px; text-decoration: none;">
+                                    Resolve &rarr;
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {# Next Recommended Operator Action Card #}
+    <div class="card" style="border-left: 5px solid #2563eb; background-color: #f8fafc;">
+        <h3 class="card-title" style="margin-bottom: 6px; font-size: 14px; text-transform: uppercase; color: #475569; letter-spacing: 0.05em;">Next Recommended Action</h3>
+        <p style="margin: 0 0 12px 0; font-size: 16px; font-weight: bold; color: #0f172a;">
+            {{ snapshot.next_recommended_action.title }}
+        </p>
+        <p style="margin: 0 16px 16px 0; color: #475569; font-size: 13.5px;">
+            {{ snapshot.next_recommended_action.description }}
+        </p>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+            <a href="{% url 'dashboard:readiness' %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline;">Launch Readiness &rarr;</a>
+            <a href="{% url 'dashboard:launch_preview' %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline;">Launch Preview &rarr;</a>
+            <a href="{% url 'dashboard:tasks' %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline;">Task Queue &rarr;</a>
+            <a href="{% url 'dashboard:daemon' %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline;">Process Controls &rarr;</a>
+            <a href="{% url 'dashboard:campaigns' %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline;">Campaigns List &rarr;</a>
+        </div>
+    </div>
+
+    {# Health & Queue Status Split #}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+        
+        {# Runtime Health Card #}
+        <div class="card">
+            <h3 class="card-title" style="margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Runtime Health State</h3>
+            <div class="detail-row">
+                <span class="detail-label">Daemon Loop Status</span>
+                <span class="detail-value">
+                    {% if snapshot.daemon_health.is_running_actual %}
+                        <span class="badge badge-success">RUNNING</span>
+                    {% elif snapshot.daemon_health.process_state == 'unknown' %}
+                        <span class="badge badge-secondary">UNKNOWN STATE</span>
+                    {% else %}
+                        <span class="badge badge-danger">STOPPED</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Daemon PID</span>
+                <span class="detail-value" style="font-family: monospace;">{{ snapshot.daemon_health.pid|default:"-" }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Last Heartbeat</span>
+                <span class="detail-value">{{ snapshot.daemon_health.last_heartbeat|date:"Y-m-d H:i:s"|default:"-" }} UTC</span>
+            </div>
+            {% if snapshot.daemon_health.heartbeat_age_seconds %}
+                <div class="detail-row">
+                    <span class="detail-label">Heartbeat Age</span>
+                    <span class="detail-value">
+                        {% if snapshot.daemon_health.heartbeat_age_seconds < 60 %}
+                            {{ snapshot.daemon_health.heartbeat_age_seconds|floatformat:0 }}s ago
+                        {% else %}
+                            {{ snapshot.daemon_health.heartbeat_age_seconds|divisibleby:60|floatformat:0 }}m ago
+                        {% endif %}
+                    </span>
+                </div>
+            {% endif %}
+            <div class="detail-row">
+                <span class="detail-label">Active LinkedIn Account</span>
+                <span class="detail-value">{{ snapshot.daemon_health.active_profile_username|default:"None linked" }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Launch Readiness Check</span>
+                <span class="detail-value" style="text-transform: capitalize;">
+                    <span class="badge {% if snapshot.readiness_summary.overall_status == 'ready' %}badge-success{% elif snapshot.readiness_summary.overall_status == 'warning' %}badge-warning{% else %}badge-danger{% endif %}">
+                        {{ snapshot.readiness_summary.overall_status }}
+                    </span>
+                </span>
+            </div>
+            {% if snapshot.latest_launch_run %}
+                <div class="detail-row" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e2e8f0;">
+                    <span class="detail-label">Latest Live Launch Run</span>
+                    <span class="detail-value">
+                        <a href="{% url 'dashboard:launch_history_detail' pk=snapshot.latest_launch_run.id %}" style="color: #2563eb; font-weight: bold; text-decoration: underline;">
+                            #{{ snapshot.latest_launch_run.id }} ({{ snapshot.latest_launch_run.status|upper }})
+                        </a>
+                    </span>
+                </div>
+            {% endif %}
+        </div>
+
+        {# Queue Status Card #}
+        <div class="card">
+            <h3 class="card-title" style="margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Queue Status metrics</h3>
+            <div class="detail-row">
+                <span class="detail-label">Running Tasks</span>
+                <span class="detail-value text-success" style="font-weight: bold;">{{ snapshot.running_tasks|length }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Next Executable Task</span>
+                <span class="detail-value">
+                    {% if snapshot.next_task %}
+                        Task #{{ snapshot.next_task.id }} ({{ snapshot.next_task.task_type }})
+                    {% else %}
+                        None
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Overdue Tasks</span>
+                <span class="detail-value text-danger" style="font-weight: bold;">{{ snapshot.overdue_count }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Pending Executable Count</span>
+                <span class="detail-value">{{ snapshot.pending_executable_count }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Failed Tasks Count</span>
+                <span class="detail-value text-danger">{{ snapshot.failed_count }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Cancelled Tasks Count</span>
+                <span class="detail-value text-secondary">{{ snapshot.cancelled_count }}</span>
+            </div>
+        </div>
+    </div>
+
+    {# Running & Next Task Details #}
+    {% if snapshot.running_tasks or snapshot.next_task %}
+        <div class="card">
+            <h3 class="card-title" style="margin-bottom: 16px;">Active Tasks Detail</h3>
+            
+            {% if snapshot.running_tasks %}
+                <h4 style="margin: 0 0 10px 0; color: #1e293b; font-size: 14px; font-weight: bold;">Currently Running Tasks</h4>
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                    {% for task in snapshot.running_tasks %}
+                        <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #fcfdfd; font-size: 13px;">
+                            <div>
+                                <strong>Task #{{ task.id }}</strong> (Type: <span class="badge badge-info">{{ task.task_type }}</span>)
+                                <span style="margin-left: 12px; color: #64748b;">Started: {{ task.started_at }}</span>
+                            </div>
+                            <div style="margin-top: 6px; color: #475569;">
+                                Campaign: <strong>{{ task.campaign_name }}</strong>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if snapshot.next_task %}
+                <h4 style="margin: 0 0 10px 0; color: #1e293b; font-size: 14px; font-weight: bold;">Next Executable Task In Queue</h4>
+                <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #f8fafc; font-size: 13px;">
+                    <div>
+                        <strong>Task #{{ snapshot.next_task.id }}</strong> (Type: <span class="badge badge-info">{{ snapshot.next_task.task_type }}</span>)
+                        <span style="margin-left: 12px; color: #64748b;">Scheduled: {{ snapshot.next_task.scheduled_at }}</span>
+                    </div>
+                    <div style="margin-top: 6px; color: #475569;">
+                        Campaign: <strong>{{ snapshot.next_task.campaign_name }}</strong>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {# Timeline Activity Feeds #}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+        
+        {# Task Queue Activity #}
+        <div class="card">
+            <h3 class="card-title" style="margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Recent Queue Actions</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+                {% for evt in snapshot.recent_queue_events %}
+                    <div style="border-bottom: 1px solid #f8fafc; padding-bottom: 8px;">
+                        <span style="color: #64748b; font-size: 11px;">{{ evt.created_at|date:"M d, H:i:s" }} UTC</span>
+                        <div style="margin-top: 2px;">
+                            <strong>{{ evt.operator }}</strong>: {{ evt.action }} Task #{{ evt.task_id }}
+                            {% if evt.new_status %}
+                                (<span style="color: #475569;">{{ evt.previous_status }} &rarr; {{ evt.new_status }}</span>)
+                            {% endif %}
+                        </div>
+                        {% if evt.note %}
+                            <div style="color: #64748b; font-style: italic; margin-top: 2px;">"{{ evt.note }}"</div>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <span style="color: #94a3b8;">No recent queue events logged.</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Launch Events Activity #}
+        <div class="card">
+            <h3 class="card-title" style="margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Recent Launch Run Actions</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+                {% for evt in snapshot.recent_launch_events %}
+                    <div style="border-bottom: 1px solid #f8fafc; padding-bottom: 8px;">
+                        <span style="color: #64748b; font-size: 11px;">{{ evt.created_at|date:"M d, H:i:s" }} UTC</span>
+                        <div style="margin-top: 2px;">
+                            <strong>{{ evt.operator }}</strong>: <span class="badge badge-info" style="font-size: 10px;">{{ evt.event_type }}</span> on Run #{{ evt.launch_run_id }}
+                        </div>
+                        {% if evt.note %}
+                            <div style="color: #475569; margin-top: 2px;">{{ evt.note }}</div>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <span style="color: #94a3b8;">No recent launch run events logged.</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Lead Events Activity #}
+        <div class="card">
+            <h3 class="card-title" style="margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Recent Lead Actions</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+                {% for evt in snapshot.recent_lead_events %}
+                    <div style="border-bottom: 1px solid #f8fafc; padding-bottom: 8px;">
+                        <span style="color: #64748b; font-size: 11px;">{{ evt.created_at|date:"M d, H:i:s" }} UTC</span>
+                        <div style="margin-top: 2px;">
+                            <strong>{{ evt.operator }}</strong>: {{ evt.action }} <strong>{{ evt.lead_identifier }}</strong>
+                            {% if evt.new_state %}
+                                (<span style="color: #475569;">{{ evt.previous_state }} &rarr; {{ evt.new_state }}</span>)
+                            {% endif %}
+                        </div>
+                        {% if evt.note %}
+                            <div style="color: #64748b; font-style: italic; margin-top: 2px;">"{{ evt.note }}"</div>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <span style="color: #94a3b8;">No recent lead pipeline actions.</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# LinkedIn Activity Logs #}
+        <div class="card">
+            <h3 class="card-title" style="margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Recent LinkedIn Activity</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+                {% for log in snapshot.recent_action_logs %}
+                    <div style="border-bottom: 1px solid #f8fafc; padding-bottom: 8px;">
+                        <span style="color: #64748b; font-size: 11px;">{{ log.created_at|date:"M d, H:i:s" }} UTC</span>
+                        <div style="margin-top: 2px;">
+                            <strong>{{ log.linkedin_profile }}</strong> executed <span class="badge badge-success" style="font-size: 10px;">{{ log.action_type|upper }}</span>
+                        </div>
+                        <div style="color: #475569; font-size: 11px; margin-top: 2px;">
+                            Campaign: {{ log.campaign_name }}
+                        </div>
+                    </div>
+                {% empty %}
+                    <span style="color: #94a3b8;">No recent LinkedIn activity logged.</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

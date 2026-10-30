@@ -1,0 +1,170 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Production Hardening & Go-Live Checklist - HuntFlow{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto; padding: 24px;">
+
+    {# Header Banner #}
+    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 32px; border-radius: 16px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); color: white; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h1 style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">Production Hardening Checkpoint</h1>
+            <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 15px;">Environment verification, database safety checklists, and safe pilot controls.</p>
+        </div>
+        <div style="background-color: rgba(255, 255, 255, 0.1); padding: 10px 18px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15); display: flex; align-items: center; gap: 8px;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background-color: {% if snapshot.blockers %}#f43f5e{% elif snapshot.warnings %}#f59e0b{% else %}#10b981{% endif %};"></div>
+            <span style="font-size: 14px; font-weight: 600;">
+                {% if snapshot.blockers %}
+                    Blocked
+                {% elif snapshot.warnings %}
+                    Warnings Pending
+                {% else %}
+                    Ready for Live Run
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    {# System Links Navigation Grid #}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-bottom: 24px;">
+        <a href="{% url 'dashboard:settings_system' %}" style="display: block; text-align: center; padding: 12px 8px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 600; color: #475569; transition: all 0.2s;">System Settings</a>
+        <a href="{% url 'dashboard:readiness' %}" style="display: block; text-align: center; padding: 12px 8px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 600; color: #475569; transition: all 0.2s;">Launch Readiness</a>
+        <a href="{% url 'dashboard:operations' %}" style="display: block; text-align: center; padding: 12px 8px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 600; color: #475569; transition: all 0.2s;">Operations Console</a>
+        <a href="{% url 'dashboard:operator_inbox' %}" style="display: block; text-align: center; padding: 12px 8px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 600; color: #475569; transition: all 0.2s;">Operator Inbox</a>
+        <a href="{% url 'dashboard:launch_preview' %}" style="display: block; text-align: center; padding: 12px 8px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 600; color: #475569; transition: all 0.2s;">Launch Preview</a>
+        <a href="{% url 'dashboard:launch_history' %}" style="display: block; text-align: center; padding: 12px 8px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 600; color: #475569; transition: all 0.2s;">Launch History</a>
+        <a href="{% url 'dashboard:daemon' %}" style="display: block; text-align: center; padding: 12px 8px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 600; color: #475569; transition: all 0.2s;">Daemon Controls</a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+
+        {# Left Side: Diagnostics and Blockers #}
+        <div>
+            
+            {# Hard Blockers Alert Box #}
+            {% if snapshot.blockers %}
+            <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-left: 5px solid #ef4444; border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <h3 style="margin: 0 0 10px 0; color: #991b1b; font-size: 16px; font-weight: 700;">Production Blockers Detected</h3>
+                <ul style="margin: 0; padding-left: 20px; color: #b91c1c; font-size: 14px; line-height: 1.5;">
+                    {% for blocker in snapshot.blockers %}
+                        <li style="margin-bottom: 6px;">{{ blocker }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {# Warnings Alert Box #}
+            {% if snapshot.warnings %}
+            <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-left: 5px solid #f59e0b; border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <h3 style="margin: 0 0 10px 0; color: #92400e; font-size: 16px; font-weight: 700;">Deployment Warnings</h3>
+                <ul style="margin: 0; padding-left: 20px; color: #b45309; font-size: 14px; line-height: 1.5;">
+                    {% for warning in snapshot.warnings %}
+                        <li style="margin-bottom: 6px;">{{ warning }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {# Checklist segments #}
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 24px;">
+                <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #1e293b;">Environment Checks</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div style="padding: 14px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <span style="display: block; font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">DEBUG mode</span>
+                        <strong style="display: block; font-size: 15px; margin-top: 4px; color: {% if snapshot.environment_status.debug %}#ef4444{% else %}#10b981{% endif %};">
+                            {% if snapshot.environment_status.debug %}ENABLED (Unsafe){% else %}DISABLED (Safe){% endif %}
+                        </strong>
+                    </div>
+                    <div style="padding: 14px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <span style="display: block; font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">SECRET_KEY Strength</span>
+                        <strong style="display: block; font-size: 15px; margin-top: 4px; color: {% if snapshot.environment_status.secret_key_configured %}#10b981{% else %}#ef4444{% endif %};">
+                            {% if snapshot.environment_status.secret_key_configured %}Secure / Customized{% else %}Default Key Detected{% endif %}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+
+            {# Database & Migrations #}
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 24px;">
+                <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #1e293b;">Database & Migrations</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div style="padding: 14px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <span style="display: block; font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">DB Engine</span>
+                        <strong style="display: block; font-size: 15px; margin-top: 4px; color: #334155;">{{ snapshot.database_status.engine }}</strong>
+                    </div>
+                    <div style="padding: 14px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <span style="display: block; font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">Unapplied Migrations</span>
+                        <strong style="display: block; font-size: 15px; margin-top: 4px; color: {% if snapshot.migration_status.unapplied_count > 0 %}#ef4444{% else %}#10b981{% endif %};">
+                            {{ snapshot.migration_status.unapplied_count }} migration(s)
+                        </strong>
+                    </div>
+                </div>
+            </div>
+
+            {# Backup & Logs #}
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 24px;">
+                <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #1e293b;">Backup & Logs</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div style="padding: 14px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <span style="display: block; font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">Available Backups</span>
+                        <strong style="display: block; font-size: 15px; margin-top: 4px; color: {% if snapshot.backup_status.backup_count > 0 %}#10b981{% else %}#f59e0b{% endif %};">
+                            {{ snapshot.backup_status.backup_count }} backup(s) found
+                        </strong>
+                    </div>
+                    <div style="padding: 14px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <span style="display: block; font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">Log State (daemon.log)</span>
+                        <strong style="display: block; font-size: 15px; margin-top: 4px; color: {% if snapshot.log_status.log_writable %}#10b981{% else %}#ef4444{% endif %};">
+                            {% if snapshot.log_status.log_writable %}Writeable ({{ snapshot.log_status.daemon_log_size_bytes }} B){% else %}Inaccessible / Not Writeable{% endif %}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        {# Right Side: Handover & Controls checklist #}
+        <div>
+            
+            {# Controls Status #}
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 24px;">
+                <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: #1e293b;">Recommended Next Action</h3>
+                <p style="font-size: 14px; color: #475569; line-height: 1.5; margin: 0 0 16px 0;">{{ snapshot.recommended_next_action }}</p>
+                <div style="background: #f1f5f9; padding: 12px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; color: #475569;">
+                    Daemon state: <span style="color: {% if snapshot.daemon_status.process_state == 'running' %}#10b981{% elif snapshot.daemon_status.process_state == 'unknown' %}#f59e0b{% else %}#ef4444{% endif %};">{% if snapshot.daemon_status.process_state == 'running' %}Running{% elif snapshot.daemon_status.process_state == 'unknown' %}Unknown (Unverifiable){% else %}Stopped{% endif %}</span>
+                </div>
+            </div>
+
+            {# Operator Verification Checklist #}
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: #1e293b;">Handover Checklist</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    
+                    <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #475569; cursor: pointer;">
+                        <input type="checkbox" checked disabled style="margin-top: 2px;">
+                        <span>LLM configurations verified</span>
+                    </label>
+
+                    <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #475569; cursor: pointer;">
+                        <input type="checkbox" {% if snapshot.linkedin_account_status.credentials_valid %}checked{% endif %} disabled style="margin-top: 2px;">
+                        <span>LinkedIn connection active</span>
+                    </label>
+
+                    <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #475569; cursor: pointer;">
+                        <input type="checkbox" {% if snapshot.backup_status.backup_count > 0 %}checked{% endif %} disabled style="margin-top: 2px;">
+                        <span>Recent SQLite backup generated</span>
+                    </label>
+
+                    <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #475569; cursor: pointer;">
+                        <input type="checkbox" {% if snapshot.operations_alert_status.active_alerts_count == 0 %}checked{% endif %} disabled style="margin-top: 2px;">
+                        <span>Operator Inbox cleared / acknowledged</span>
+                    </label>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

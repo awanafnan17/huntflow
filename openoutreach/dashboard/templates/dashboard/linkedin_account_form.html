@@ -1,0 +1,77 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Edit LinkedIn Account{% endblock %}
+
+{% block page_title %}Edit LinkedIn Account{% endblock %}
+{% block page_subtitle %}Manage browser credentials and rate limits.{% endblock %}
+
+{% block main_content %}
+<div class="card settings-card">
+    <form method="post">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="alert alert-info" style="border-color: #ef4444; color: #ef4444; background-color: #fef2f2;">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Username / Email</label>
+            {{ form.linkedin_username }}
+            {{ form.linkedin_username.errors }}
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Current Password Status</label>
+            <p style="font-family: monospace; font-size: 13px; color: #1e293b; background-color: #f8fafc; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                {{ masked_password_status }}
+            </p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">New Password</label>
+            {{ form.linkedin_password }}
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                Leave blank to keep existing secret. Enter a new value to replace it.
+            </p>
+            {{ form.linkedin_password.errors }}
+        </div>
+        
+        <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+            {{ form.active }}
+            <label style="font-weight: 600; color: #64748b;">Active Profile</label>
+        </div>
+        {{ form.active.errors }}
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Connection Daily Limit</label>
+            {{ form.connect_daily_limit }}
+            <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px;">
+                {{ form.connect_unlimited }}
+                <label style="font-size: 13px; color: #64748b;">{{ form.connect_unlimited.label }}</label>
+            </div>
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">{{ form.connect_unlimited.help_text }}</p>
+            {{ form.connect_daily_limit.errors }}
+            {{ form.connect_unlimited.errors }}
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #64748b;">Follow Up Daily Limit</label>
+            {{ form.follow_up_daily_limit }}
+            <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px;">
+                {{ form.follow_up_unlimited }}
+                <label style="font-size: 13px; color: #64748b;">{{ form.follow_up_unlimited.label }}</label>
+            </div>
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">{{ form.follow_up_unlimited.help_text }}</p>
+            {{ form.follow_up_daily_limit.errors }}
+            {{ form.follow_up_unlimited.errors }}
+        </div>
+        
+        <div style="display: flex; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+            <button type="submit" class="btn btn-primary">Save Account</button>
+            <a href="{% url 'dashboard:linkedin_accounts' %}" class="btn">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

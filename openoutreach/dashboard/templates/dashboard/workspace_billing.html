@@ -1,0 +1,51 @@
+{% extends "dashboard/base.html" %}
+{% block page_title %}Subscription & Usage Metering{% endblock %}
+{% block main_content %}
+<div class="card p-4 mb-4">
+  <h2>Current Plan: {{ summary.plan_name }} ({{ summary.status|title }})</h2>
+  <div class="row text-center mt-3">
+    <div class="col-md-3">
+      <h4>Campaigns</h4>
+      <p class="fs-5"><strong>{{ summary.campaigns_used }}</strong> / {% if summary.campaigns_limit == -1 %}Unlimited{% else %}{{ summary.campaigns_limit }}{% endif %}</p>
+    </div>
+    <div class="col-md-3">
+      <h4>Monthly Leads</h4>
+      <p class="fs-5"><strong>{{ summary.leads_imported_this_period }}</strong> / {{ summary.leads_limit }}</p>
+    </div>
+    <div class="col-md-3">
+      <h4>Sender Identities</h4>
+      <p class="fs-5"><strong>{{ summary.sender_identities_used }}</strong> / {{ summary.sender_identities_limit }}</p>
+    </div>
+    <div class="col-md-3">
+      <h4>Team Members</h4>
+      <p class="fs-5"><strong>{{ summary.members_used }}</strong> / {{ summary.members_limit }}</p>
+    </div>
+  </div>
+</div>
+
+<div class="card p-4">
+  <h2>Available Subscription Plans</h2>
+  <div class="row mt-3">
+    {% for plan in plans %}
+    <div class="col-md-4">
+      <div class="card p-3 mb-3 border {% if summary.plan_slug == plan.slug %}border-primary border-2{% endif %}">
+        <h3>{{ plan.name }}</h3>
+        <h4 class="text-primary">${{ plan.monthly_price_usd }} <small class="text-muted">/mo</small></h4>
+        <p>{{ plan.description }}</p>
+        <ul>
+          <li><strong>Campaigns:</strong> {% if plan.max_campaigns == -1 %}Unlimited{% else %}{{ plan.max_campaigns }}{% endif %}</li>
+          <li><strong>Monthly Leads:</strong> {{ plan.max_monthly_leads }}</li>
+          <li><strong>Senders:</strong> {{ plan.max_sender_identities }}</li>
+          <li><strong>Members:</strong> {{ plan.max_members }}</li>
+        </ul>
+        {% if summary.plan_slug == plan.slug %}
+          <button class="btn btn-secondary w-100" disabled>Current Plan</button>
+        {% else %}
+          <a href="?plan={{ plan.slug }}&mock_checkout=1" class="btn btn-primary w-100">Upgrade / Switch</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

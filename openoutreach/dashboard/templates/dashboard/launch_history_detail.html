@@ -1,0 +1,136 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Launch Run Detail #{{ run.id }}{% endblock %}
+
+{% block page_title %}Launch Run #{{ run.id }} Details{% endblock %}
+{% block page_subtitle %}Audit parameters, environmental snapshots, and event history for this session.{% endblock %}
+
+{% block main_content %}
+<div style="display: flex; flex-direction: column; gap: 24px;">
+
+    {# Detail Back Navigation #}
+    <div>
+        <a href="{% url 'dashboard:launch_history' %}" style="text-decoration: none; font-weight: bold; color: #2563eb; font-size: 13px;">
+            &larr; Back to Launch Run History
+        </a>
+    </div>
+
+    {# Launch Metadata Card #}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+        <div class="card">
+            <h3 class="card-title" style="margin-bottom: 16px;">Session Overview</h3>
+            <div class="detail-row">
+                <span class="detail-label">Status</span>
+                <span class="detail-value">
+                    <span class="badge {% if run.status == 'running' %}badge-success{% elif run.status == 'blocked' %}badge-danger{% elif run.status == 'stopped' %}badge-secondary{% else %}badge-info{% endif %}">
+                        {{ run.status|upper }}
+                    </span>
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Launch Mode</span>
+                <span class="detail-value" style="text-transform: capitalize;">{{ run.mode }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Trigger Source</span>
+                <span class="detail-value" style="text-transform: capitalize;">{{ run.source }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Trigger Operator</span>
+                <span class="detail-value">{{ run.operator.username|default:"System Engine" }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Daemon PID</span>
+                <span class="detail-value" style="font-family: monospace;">{{ run.daemon_pid|default:"None" }}</span>
+            </div>
+            {% if run.stop_reason %}
+                <div class="detail-row">
+                    <span class="detail-label">Stop Reason</span>
+                    <span class="detail-value" style="color: #64748b;">{{ run.stop_reason }}</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h3 class="card-title" style="margin-bottom: 16px;">Execution Timing</h3>
+            <div class="detail-row">
+                <span class="detail-label">Started At</span>
+                <span class="detail-value">{{ run.started_at|date:"Y-m-d H:i:s"|default:"-" }} UTC</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Ended At</span>
+                <span class="detail-value">{{ run.ended_at|date:"Y-m-d H:i:s"|default:"-" }} UTC</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Total Duration</span>
+                <span class="detail-value">
+                    {% if run.ended_at and run.started_at %}
+                        {{ run.ended_at|timesince:run.started_at }}
+                    {% elif run.started_at %}
+                        Active / Running
+                    {% else %}
+                        -
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Check blockers count</span>
+                <span class="detail-value text-danger" style="font-weight: bold;">{{ run.blocker_count }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Check warnings count</span>
+                <span class="detail-value text-warning" style="font-weight: bold;">{{ run.warning_count }}</span>
+            </div>
+        </div>
+    </div>
+
+    {# Audit Events Log #}
+    <div class="card">
+        <h3 class="card-title" style="margin-bottom: 12px;">Audited Session Events</h3>
+        <div class="table-container" style="box-shadow: none; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;">
+            <table class="data-table" style="font-size: 13px;">
+                <thead>
+                    <tr>
+                        <th style="width: 150px;">Time</th>
+                        <th style="width: 180px;">Event Type</th>
+                        <th>Notes</th>
+                        <th style="width: 150px;">Operator</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in events %}
+                        <tr>
+                            <td><span style="font-size: 12px; color: #64748b;">{{ event.created_at|date:"Y-m-d H:i:s" }} UTC</span></td>
+                            <td><span class="badge badge-info">{{ event.event_type }}</span></td>
+                            <td><span style="color: #334155;">{{ event.note }}</span></td>
+                            <td><span style="color: #64748b;">{{ event.operator.username|default:"System" }}</span></td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #94a3b8; padding: 12px;">No custom events logged for this launch session.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# Snapshots Panels #}
+    <div style="display: grid; grid-template-columns: 1fr; gap: 24px;">
+        {# Readiness Check Snapshot #}
+        <div class="card">
+            <h3 class="card-title" style="margin-bottom: 8px;">Readiness Check State Snapshot (Masked)</h3>
+            <p style="margin: 0 0 12px 0; color: #64748b; font-size: 13px;">Environmental parameters, account configuration constraints, and active flags captured at launch execution start time.</p>
+            <pre style="margin: 0; background-color: #0f172a; color: #cbd5e1; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto; overflow-x: auto; white-space: pre-wrap;">{{ readiness_snapshot_json }}</pre>
+        </div>
+
+        {# Task Queue Snapshot #}
+        <div class="card">
+            <h3 class="card-title" style="margin-bottom: 8px;">Task Queue State Snapshot (Masked)</h3>
+            <p style="margin: 0 0 12px 0; color: #64748b; font-size: 13px;">First 10 pending tasks scheduled for execution captured at launch execution start time.</p>
+            <pre style="margin: 0; background-color: #0f172a; color: #cbd5e1; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto; overflow-x: auto; white-space: pre-wrap;">{{ queue_snapshot_json }}</pre>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

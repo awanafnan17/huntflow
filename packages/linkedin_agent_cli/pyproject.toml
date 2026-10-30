@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "linkedin-agent-cli"
+version = "0.1.10"
+description = "Django-free library and CLI for LinkedIn platform mechanics over a bound browser session."
+authors = [{name = "eracle", email = "eracle@posteo.eu"}]
+license = {text = "MIT"}
+requires-python = ">=3.10"
+dependencies = [
+    "playwright>=1.59",
+    "playwright-stealth",
+    "tenacity<10,>=8",
+    "termcolor",
+]
+
+[project.scripts]
+linkedin-cli = "linkedin_cli.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["linkedin_cli*"]

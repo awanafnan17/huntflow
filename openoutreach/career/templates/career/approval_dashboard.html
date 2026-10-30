@@ -1,0 +1,129 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Generic Approval Center - HuntFlow{% endblock %}
+
+{% block page_title %}Generic Approval Center{% block page_subtitle %}Review pending drafts, check factual integrity, and perform bulk approvals.{% endblock %}{% endblock %}
+
+{% block main_content %}
+<div style="display: flex; flex-direction: column; gap: 24px; max-width: 1200px;">
+
+    {# Bulk Approval Center Table #}
+    <div class="card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 16px;">
+            <div>
+                <h2 style="margin: 0; font-size: 18px; color: #1e293b;">Review Items Queue</h2>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">Select pending drafts to bulk approve and freeze.</p>
+            </div>
+        </div>
+
+        <form method="POST" action="{% url 'career:approval_dashboard' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="bulk_approve">
+
+            <div style="overflow-x: auto; margin-bottom: 20px;">
+                <table class="data-table" style="font-size: 13px; width: 100%;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 10px; text-align: left; width: 40px;">
+                                <input type="checkbox" id="select-all" onclick="toggleAll(this)">
+                            </th>
+                            <th style="padding: 10px; text-align: left;">Candidate</th>
+                            <th style="padding: 10px; text-align: left;">Job / Company</th>
+                            <th style="padding: 10px; text-align: left;">Version</th>
+                            <th style="padding: 10px; text-align: left;">Status</th>
+                            <th style="padding: 10px; text-align: left;">Submitted At</th>
+                            <th style="padding: 10px; text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">
+                                {% if item.status != 'approved' %}
+                                <input type="checkbox" name="selected_items" value="{{ item.pk }}" class="item-checkbox">
+                                {% endif %}
+                            </td>
+                            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #334155;">
+                                {{ item.application.candidate_profile.full_name }}
+                            </td>
+                            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; color: #475569;">
+                                {{ item.application.job.title }} at <strong>{{ item.application.job.company }}</strong>
+                            </td>
+                            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #475569;">
+                                v{{ item.draft.version_number }}
+                            </td>
+                            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">
+                                <span class="badge {% if item.status == 'approved' %}badge-success{% elif item.status == 'needs_info' %}badge-warning{% elif item.status == 'revoked' %}badge-error{% else %}badge-info{% endif %}" style="font-size: 11px;">
+                                    {{ item.get_status_display }}
+                                </span>
+                            </td>
+                            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; color: #64748b; white-space: nowrap;">
+                                {{ item.created_at|date:"Y-m-d H:i" }} UTC
+                            </td>
+                            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">
+                                <a href="{% url 'career:application_review' item.application.pk %}" class="btn" style="padding: 4px 10px; font-size: 11px; text-decoration: none;">
+                                    Inspect &rarr;
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 24px; color: #64748b;">No items requiring approval found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display: flex; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px; font-weight: bold;">
+                    Bulk Approve Selected
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {# Approval Batches Log #}
+    <div class="card" style="padding: 24px;">
+        <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">Immutable Approval Batches</h3>
+        <div style="overflow-x: auto;">
+            <table class="data-table" style="font-size: 12px; width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="padding: 8px; text-align: left;">Batch ID</th>
+                        <th style="padding: 8px; text-align: left;">Name</th>
+                        <th style="padding: 8px; text-align: left;">Operator</th>
+                        <th style="padding: 8px; text-align: left;">Date Created</th>
+                        <th style="padding: 8px; text-align: right;">Approved Items Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for batch in batches %}
+                    <tr>
+                        <td style="padding: 8px; font-weight: bold;">#{{ batch.id }}</td>
+                        <td style="padding: 8px; color: #475569;">{{ batch.name }}</td>
+                        <td style="padding: 8px; font-weight: 500;">{{ batch.created_by.username }}</td>
+                        <td style="padding: 8px; color: #64748b;">{{ batch.created_at|date:"Y-m-d H:i" }} UTC</td>
+                        <td style="padding: 8px; text-align: right; font-weight: bold; color: #16a34a;">{{ batch.items.count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 12px; color: #64748b;">No bulk batches executed yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function toggleAll(source) {
+    checkboxes = document.getElementsByClassName('item-checkbox');
+    for(var i=0, n=checkboxes.length; i<n; i++) {
+        checkboxes[i].checked = source.checked;
+    }
+}
+</script>
+{% endblock %}

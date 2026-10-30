@@ -1,0 +1,53 @@
+{% extends 'dashboard/settings_base.html' %}
+
+{% block settings_title %}Test & Synthetic Data - Settings{% endblock %}
+{% block settings_page_title %}Test & Synthetic Data (Admin){% endblock %}
+{% block settings_page_subtitle %}Audit and inspect synthetic test campaigns, mock jobs, and QA pipeline records isolated from the customer experience.{% endblock %}
+
+{% block settings_content %}
+<div style="max-width: 900px; display: flex; flex-direction: column; gap: 24px;">
+
+    <!-- Test Campaigns -->
+    <div class="saas-card">
+        <div class="saas-card-header">
+            <div class="saas-card-title">🧪 Synthetic / Test Campaigns ({{ test_campaigns|length }})</div>
+            <span class="badge badge-secondary">Isolated</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% for c in test_campaigns %}
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong style="color: #0f172a;">{{ c.name }}</strong> (ID #{{ c.pk }})
+                        <div style="font-size: 12px; color: #64748b;">Target: {{ c.icp_title_keywords|default:"(None)" }}</div>
+                    </div>
+                    <span class="badge badge-warning">Synthetic</span>
+                </div>
+            {% empty %}
+                <div style="font-size: 13px; color: #64748b; padding: 12px 0;">No synthetic campaigns found.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Test Jobs -->
+    <div class="saas-card">
+        <div class="saas-card-header">
+            <div class="saas-card-title">💼 Synthetic / Mock Jobs ({{ test_jobs|length }})</div>
+            <span class="badge badge-secondary">Isolated</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% for j in test_jobs %}
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong style="color: #0f172a;">{{ j.title }}</strong> @ {{ j.company }}
+                        <div style="font-size: 12px; color: #64748b;">Source: {{ j.source }}</div>
+                    </div>
+                    <span class="badge badge-warning">Synthetic</span>
+                </div>
+            {% empty %}
+                <div style="font-size: 13px; color: #64748b; padding: 12px 0;">No synthetic jobs found.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

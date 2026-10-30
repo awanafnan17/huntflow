@@ -1,0 +1,259 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Launch Readiness{% endblock %}
+
+{% block page_title %}Launch Readiness Check{% endblock %}
+{% block page_subtitle %}Preflight validation checklist before starting active outreach.{% endblock %}
+
+{% block main_content %}
+<div style="display: flex; flex-direction: column; gap: 24px;">
+
+    {# Campaign Scoping Selector #}
+    <div class="card" style="padding: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 14px; font-weight: 600; color: #475569;">Scope:</span>
+            {% if readiness.campaign_scoped %}
+                <span class="badge badge-info" style="font-size: 13px;">Campaign Scoped: {{ scoped_campaign.name }}</span>
+            {% else %}
+                <span class="badge badge-success" style="font-size: 13px;">Global Status</span>
+            {% endif %}
+        </div>
+        <form method="get" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+            <label for="campaign_id" style="font-size: 13px; color: #64748b;">Filter Campaign:</label>
+            <select name="campaign_id" id="campaign_id" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background-color: white;" onchange="this.form.submit()">
+                <option value="">All Campaigns (Global)</option>
+                {% for camp in campaigns %}
+                    <option value="{{ camp.id }}" {% if readiness.scoped_campaign_id == camp.id %}selected{% endif %}>{{ camp.name }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    {# Recommended Action Card #}
+    <div class="card" style="border-left: 5px solid #2563eb; background-color: #f0fdf4;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div>
+                <span style="text-transform: uppercase; font-size: 11px; font-weight: 700; color: #16a34a; letter-spacing: 0.05em;">Next Recommended Action</span>
+                <h3 style="margin: 4px 0; color: #0f172a; font-size: 18px; font-weight: 700;">{{ readiness.next_action.title }}</h3>
+                <p style="margin: 0; color: #475569; font-size: 14px;">{{ readiness.next_action.description }}</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <a href="{% url 'dashboard:launch_preview' %}" style="display: inline-block; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; background-color: #10b981; color: white; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                    Preview Launch
+                </a>
+                <a href="{{ readiness.next_action.fix_link }}" style="display: inline-block; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; background-color: #2563eb; color: white; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                    Resolve Now &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+        {# Blockers Panel #}
+        <div class="card" style="border-left: 4px solid #ef4444;">
+            <h2 class="card-title" style="color: #ef4444; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                <span>Blockers</span>
+                <span style="font-size: 12px; background: #fee2e2; color: #ef4444; padding: 2px 8px; border-radius: 12px;">{{ readiness.hard_blockers|length }}</span>
+            </h2>
+            {% if readiness.hard_blockers %}
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    {% for blocker in readiness.hard_blockers %}
+                        <div style="padding: 12px; background: #fff5f5; border: 1px solid #fee2e2; border-radius: 6px;">
+                            <h4 style="margin: 0 0 4px 0; color: #991b1b; font-size: 14px; font-weight: bold;">{{ blocker.title }}</h4>
+                            <p style="margin: 0 0 8px 0; color: #7f1d1d; font-size: 13px; line-height: 1.4;">{{ blocker.description }}</p>
+                            <a href="{{ blocker.fix_link }}" style="font-size: 12px; color: #b91c1c; font-weight: bold; text-decoration: underline;">Configure / Fix &rarr;</a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="padding: 24px; text-align: center; color: #10b981; background: #f0fdf4; border-radius: 6px; font-size: 13px;">
+                    No launch blockers detected.
+                </div>
+            {% endif %}
+        </div>
+
+        {# Warnings Panel #}
+        <div class="card" style="border-left: 4px solid #f59e0b;">
+            <h2 class="card-title" style="color: #d97706; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                <span>Warnings</span>
+                <span style="font-size: 12px; background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 12px;">{{ readiness.warnings|length }}</span>
+            </h2>
+            {% if readiness.warnings %}
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    {% for warn in readiness.warnings %}
+                        <div style="padding: 12px; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px;">
+                            <h4 style="margin: 0 0 4px 0; color: #92400e; font-size: 14px; font-weight: bold;">{{ warn.title }}</h4>
+                            <p style="margin: 0 0 8px 0; color: #78350f; font-size: 13px; line-height: 1.4;">{{ warn.description }}</p>
+                            <a href="{{ warn.fix_link }}" style="font-size: 12px; color: #b45309; font-weight: bold; text-decoration: underline;">Configure / Fix &rarr;</a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="padding: 24px; text-align: center; color: #10b981; background: #f0fdf4; border-radius: 6px; font-size: 13px;">
+                    No warnings detected.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# System Checklist Status Details #}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+        {# Section 1: System Config #}
+        <div class="card">
+            <h3 class="card-title" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px;">System Config</h3>
+            <div class="detail-row">
+                <span class="detail-label">LLM Setup</span>
+                <span class="detail-value">
+                    {% if readiness.sections.system_config.llm_configured %}
+                        <span class="badge badge-success">Configured</span>
+                    {% else %}
+                        <span class="badge badge-danger">Not set</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Model Prefix</span>
+                <span class="detail-value" style="font-size: 12px;">{{ readiness.sections.system_config.ai_model }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">BetterContact</span>
+                <span class="detail-value">
+                    {% if readiness.sections.system_config.bettercontact_configured %}
+                        <span class="badge badge-success">Configured</span>
+                    {% else %}
+                        <span class="badge badge-secondary">Disabled</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Mailboxes Count</span>
+                <span class="detail-value">{{ readiness.sections.system_config.has_mailboxes|yesno:"Yes,None" }}</span>
+            </div>
+        </div>
+
+        {# Section 2: LinkedIn Accounts #}
+        <div class="card">
+            <h3 class="card-title" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px;">LinkedIn Accounts</h3>
+            <div class="detail-row">
+                <span class="detail-label">Active Profiles</span>
+                <span class="detail-value">{{ readiness.sections.linkedin_accounts.active_profiles }} / {{ readiness.sections.linkedin_accounts.total_profiles }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Missing Credentials</span>
+                <span class="detail-value">{{ readiness.sections.linkedin_accounts.missing_creds }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Missing Self Link</span>
+                <span class="detail-value">{{ readiness.sections.linkedin_accounts.missing_self_lead }}</span>
+            </div>
+        </div>
+
+        {# Section 3: Campaigns #}
+        <div class="card">
+            <h3 class="card-title" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px;">Campaign Status</h3>
+            <div class="detail-row">
+                <span class="detail-label">Total / Active</span>
+                <span class="detail-value">{{ readiness.sections.campaigns.total_campaigns }} / {{ readiness.sections.campaigns.active_campaigns }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">No Assigned Users</span>
+                <span class="detail-value">{{ readiness.sections.campaigns.no_users }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Missing Note Template</span>
+                <span class="detail-value">{{ readiness.sections.campaigns.no_notes }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Shared LinkedIn Accounts</span>
+                <span class="detail-value">{{ readiness.sections.campaigns.shared_users }}</span>
+            </div>
+        </div>
+
+        {# Section 4: Lead Pipeline #}
+        <div class="card">
+            <h3 class="card-title" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px;">CRM Pipeline</h3>
+            <div class="detail-row">
+                <span class="detail-label">Discovered Leads</span>
+                <span class="detail-value">{{ readiness.sections.lead_pipeline.discovered_leads }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Qualified / Ready</span>
+                <span class="detail-value">{{ readiness.sections.lead_pipeline.qualified }} / {{ readiness.sections.lead_pipeline.ready_to_connect }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Connected / Failed</span>
+                <span class="detail-value">{{ readiness.sections.lead_pipeline.connected }} / {{ readiness.sections.lead_pipeline.failed }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Unresolved Emails</span>
+                <span class="detail-value">{{ readiness.sections.lead_pipeline.unresolved_emails }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Ready to Email</span>
+                <span class="detail-value">{{ readiness.sections.lead_pipeline.ready_to_email }}</span>
+            </div>
+        </div>
+
+        {# Section 5: Task Queue #}
+        <div class="card">
+            <h3 class="card-title" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px;">Task Queue</h3>
+            <div class="detail-row">
+                <span class="detail-label">Pending Executable</span>
+                <span class="detail-value">{{ readiness.sections.task_queue.pending_executable }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Ignored (Paused)</span>
+                <span class="detail-value">{{ readiness.sections.task_queue.ignored_pending }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Failed / Cancelled</span>
+                <span class="detail-value">{{ readiness.sections.task_queue.failed_tasks }} / {{ readiness.sections.task_queue.cancelled_tasks }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Overdue Tasks</span>
+                <span class="detail-value">{{ readiness.sections.task_queue.overdue_tasks }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Next Scheduled</span>
+                <span class="detail-value" style="font-size: 11px; word-break: break-all;">{{ readiness.sections.task_queue.next_scheduled_task }}</span>
+            </div>
+        </div>
+
+        {# Section 6: Daemon Status #}
+        <div class="card">
+            <h3 class="card-title" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px;">Daemon Control</h3>
+            <div class="detail-row">
+                <span class="detail-label">Heartbeat State</span>
+                <span class="detail-value">
+                    {% if readiness.sections.daemon.is_running %}
+                        <span class="badge badge-success">Running</span>
+                    {% else %}
+                        <span class="badge badge-danger">Stopped</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Process Probe</span>
+                <span class="detail-value">
+                    {% if readiness.sections.daemon.process_state == 'running' %}
+                        <span style="color: #10b981; font-weight: bold;">Active Process</span>
+                    {% elif readiness.sections.daemon.process_state == 'stopped' %}
+                        <span style="color: #ef4444; font-weight: bold;">Dead Process</span>
+                    {% else %}
+                        <span style="color: #64748b; font-weight: bold;">Unknown</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Stored PID</span>
+                <span class="detail-value">{{ readiness.sections.daemon.pid|default:"-" }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Heartbeat UTC</span>
+                <span class="detail-value" style="font-size: 11px; word-break: break-all;">{{ readiness.sections.daemon.last_heartbeat }}</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+#!/bin/bash
+set -eo pipefail
+
+echo "Starting virtual display for bootstrap browser runtime..."
+rm -f /tmp/.X98-lock
+Xvfb :98 -screen 0 1920x1080x24 &
+sleep 1
+export DISPLAY=:98
+
+echo "Starting HuntFlow production bootstrap WebSocket server on port 8001..."
+exec python manage.py run_bootstrap_server --host 0.0.0.0 --port 8001 "$@"

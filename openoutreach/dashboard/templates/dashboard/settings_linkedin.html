@@ -1,0 +1,464 @@
+{% extends 'dashboard/settings_base.html' %}
+
+{% block settings_title %}LinkedIn - Settings{% endblock %}
+{% block settings_page_title %}LinkedIn Account{% endblock %}
+{% block settings_page_subtitle %}Connect and manage your LinkedIn sender profile for automated networking and job applications.{% endblock %}
+
+{% block settings_content %}
+<div style="max-width: 780px;">
+
+    <!-- Account Status Card -->
+    <div class="saas-card" style="margin-bottom: 24px;">
+        <div class="saas-card-header">
+            <div class="saas-card-title" style="display: flex; align-items: center; gap: 8px;">
+                <span>🔗 Account Status</span>
+                {% if session_origin == 'huntflow_managed' %}
+                    <span style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: #dcfce7; color: #166534;">
+                        🛡️ HUNTFLOW MANAGED
+                    </span>
+                {% else %}
+                    <span style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: #e0f2fe; color: #075985;">
+                        📦 IMPORTED SEED
+                    </span>
+                {% endif %}
+            </div>
+            <span class="badge {{ status_badge_class }}">
+                {{ status_label }}
+            </span>
+        </div>
+
+        <p style="font-size: 14px; color: #475569; margin-bottom: 20px;">
+            {{ status_message }}
+        </p>
+
+        {% if status_code == 'connected' %}
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                    <div>
+                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b; margin-bottom: 4px;">Account Name</div>
+                        <div style="font-size: 15px; font-weight: 700; color: #0f172a;">
+                            {{ profile.display_name|default:profile.linkedin_username }}
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b; margin-bottom: 4px;">Public Profile</div>
+                        <div style="font-size: 13px; color: #2563eb; word-break: break-all;">
+                            {% if profile.public_profile_url %}
+                                <a href="{{ profile.public_profile_url }}" target="_blank" rel="noopener noreferrer">{{ profile.public_profile_url|cut:"?isSelfProfile=true" }}</a>
+                            {% else %}
+                                <span style="color: #64748b;">(Not configured)</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b; margin-bottom: 4px;">Last Verified</div>
+                        <div style="font-size: 13px; font-weight: 600; color: #0f172a;">
+                            {% if profile.last_validated_at %}
+                                {{ profile.last_validated_at|date:"Y-m-d H:i" }} UTC
+                            {% else %}
+                                <span style="color: #64748b;">Recently</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connected Account Actions -->
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <form method="POST" action="{% url 'dashboard:settings_linkedin_verify' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+                        ✓ Verify Connection
+                    </button>
+                </form>
+
+                <form method="POST" action="{% url 'dashboard:settings_linkedin_disconnect' %}" onsubmit="return confirm('Are you sure you want to disconnect your LinkedIn account?');" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn" style="color: #ef4444; border-color: #fecaca;">
+                        Disconnect
+                    </button>
+                </form>
+            </div>
+        {% elif status_code == 'attention' %}
+            <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 16px; margin-bottom: 20px; color: #92400e;">
+                <strong>⚠️ Checkpoint / Verification Notice:</strong>
+                <p style="font-size: 13px; margin-top: 4px; line-height: 1.5;">
+                    LinkedIn is asking to verify your identity or solve a security challenge. You can resolve this using the server-managed bootstrap below.
+                </p>
+            </div>
+        {% elif status_code == 'invalid' or status_code == 'expired' or status_code == 'error' %}
+            <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 18px; margin-bottom: 20px; color: #991b1b;">
+                <div style="font-weight: 700; font-size: 15px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                    <span>❌</span> LinkedIn Authentication Required
+                </div>
+                <p style="font-size: 13px; margin: 0 0 8px 0; color: #7f1d1d; font-weight: 600;">
+                    Please establish an authoritative HuntFlow-managed session below.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 1. RECOMMENDED: Establish HuntFlow-Managed Session -->
+    <div class="saas-card" style="margin-bottom: 24px; border-left: 4px solid #10b981;">
+        <div class="saas-card-header">
+            <div class="saas-card-title" style="color: #065f46;">
+                🛡️ Recommended: Establish HuntFlow-Managed Session
+            </div>
+            <span style="font-size: 12px; font-weight: 700; color: #059669; background: #ecfdf5; padding: 4px 10px; border-radius: 6px;">
+                ZERO SHARED COOKIES
+            </span>
+        </div>
+        <p style="font-size: 13px; color: #374151; line-height: 1.6; margin-bottom: 16px;">
+            Launches an isolated, server-owned browser session directly on the HuntFlow server. You interact manually with LinkedIn via an encrypted in-app screencast to complete authentication. HuntFlow creates and owns its own authoritative session—ending the need to copy cookies from your personal computer.
+        </p>
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <button type="button" id="btn-start-bootstrap" class="btn btn-primary" style="background: #059669; border-color: #059669; font-weight: 700; padding: 10px 22px;">
+                🚀 START SERVER BOOTSTRAP
+            </button>
+            <span style="font-size: 12px; color: #6b7280;">
+                🔒 Zero password/MFA logging. Full server ownership. Single-use token.
+            </span>
+        </div>
+    </div>
+
+    <!-- 2. MANUAL USE: Pause / Resume Provider Activity -->
+    <div class="saas-card" style="margin-bottom: 24px; border-left: 4px solid #f59e0b;">
+        <div class="saas-card-header">
+            <div class="saas-card-title" style="color: #92400e;">
+                ⏸️ Manual Provider Activity Control
+            </div>
+            {% if manual_provider_use_paused %}
+                <span style="font-size: 12px; font-weight: 700; color: #b45309; background: #fef3c7; padding: 4px 10px; border-radius: 6px;">
+                    PAUSED FOR MANUAL USE
+                </span>
+            {% else %}
+                <span style="font-size: 12px; font-weight: 700; color: #15803d; background: #dcfce7; padding: 4px 10px; border-radius: 6px;">
+                    ACTIVE / READY
+                </span>
+            {% endif %}
+        </div>
+        <p style="font-size: 13px; color: #374151; line-height: 1.6; margin-bottom: 16px;">
+            Planning to use LinkedIn manually on your personal laptop or mobile device? Pause HuntFlow's provider operations to prevent concurrent sessions. While paused, all 8 automation configuration switches remain saved, but background browser tasks, reads, and writes are blocked.
+        </p>
+        <div>
+            {% if manual_provider_use_paused %}
+                <form method="POST" action="{% url 'dashboard:resume_provider_automation' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary" style="background: #15803d; border-color: #15803d; font-weight: 700;">
+                        ▶️ RESUME PROVIDER ACTIVITY
+                    </button>
+                </form>
+            {% else %}
+                <form method="POST" action="{% url 'dashboard:pause_provider_automation' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn" style="border-color: #f59e0b; color: #b45309; font-weight: 700; background: #fffbeb;">
+                        ⏸️ PAUSE FOR MANUAL USE
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 3. LEGACY / RECOVERY: Import Existing Session Cookie -->
+    <details class="saas-card" style="margin-bottom: 24px; cursor: pointer;">
+        <summary style="font-weight: 700; font-size: 15px; color: #475569; user-select: none; padding: 4px 0;">
+            📦 Legacy / Recovery: Import Existing Session Cookie
+        </summary>
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0; cursor: default;">
+            <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 12px; color: #92400e; line-height: 1.5;">
+                <strong>⚠️ Caution:</strong> Importing authentication cookies from an active external browser shares that session with HuntFlow. External browser sessions may be invalidated. For stability, use the <strong>Server-Managed Bootstrap</strong> above.
+            </div>
+
+            <form method="POST" action="{% url 'dashboard:settings_linkedin_save' %}" autocomplete="off">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="li-cookie-input" class="form-label">
+                        LinkedIn Session Cookie (<code style="font-weight: 700; color: #2563eb;">li_at</code>)
+                    </label>
+                    <input 
+                        type="password" 
+                        id="li-cookie-input" 
+                        name="li_at_cookie" 
+                        class="form-input" 
+                        placeholder="Paste your li_at session cookie here..." 
+                        autocomplete="new-password"
+                        required
+                    >
+                    <div class="form-help">
+                        Your session cookie is securely encrypted at rest. Provenance will be marked as <code>imported_seed</code>.
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; align-items: center; margin-top: 16px;">
+                    <button type="submit" class="btn btn-primary" style="font-weight: 700;">
+                        SAVE IMPORTED SEED
+                    </button>
+                    {% if session_origin == 'huntflow_managed' %}
+                    <label style="font-size: 12px; color: #b91c1c; display: flex; align-items: center; gap: 6px;">
+                        <input type="checkbox" name="confirm_replace_managed" value="1" required>
+                        I understand this downgrades the session from HuntFlow-Managed to Imported Seed.
+                    </label>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </details>
+
+</div>
+
+<!-- Interactive Server Bootstrap Modal -->
+<div id="bootstrap-modal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div style="background: #ffffff; width: 95%; max-width: 1000px; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;">
+        <!-- Modal Header -->
+        <div style="background: #0f172a; color: #ffffff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 18px;">🛡️</span>
+                <span style="font-weight: 700; font-size: 15px;">HuntFlow Server Browser Session</span>
+                <span id="bs-status-badge" style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: #334155; color: #cbd5e1;">
+                    INITIALIZING
+                </span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <span id="bs-timer" style="font-size: 12px; font-family: monospace; color: #94a3b8;">15:00</span>
+                <button type="button" id="btn-close-modal" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+        </div>
+
+        <!-- Interactive Canvas Viewport -->
+        <div style="flex: 1; background: #1e293b; display: flex; align-items: center; justify-content: center; position: relative; min-height: 480px; overflow: hidden;">
+            <div id="bs-loading-spinner" style="position: absolute; color: #94a3b8; text-align: center;">
+                <div style="font-size: 32px; margin-bottom: 8px;">⏳</div>
+                <div style="font-size: 14px; font-weight: 600;">Connecting to server browser...</div>
+            </div>
+            <canvas id="bs-canvas" width="1280" height="800" tabindex="0" style="max-width: 100%; max-height: 65vh; object-fit: contain; cursor: crosshair; display: none; outline: none;"></canvas>
+        </div>
+
+        <!-- Modal Footer Controls -->
+        <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div style="font-size: 12px; color: #64748b;">
+                🔒 Zero password/MFA logging. Keystrokes and frames stream transiently in-memory.
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" id="btn-abort-bootstrap" class="btn" style="color: #ef4444; border-color: #fecaca;">
+                    Abort
+                </button>
+                <button type="button" id="btn-complete-bootstrap" class="btn btn-primary" style="background: #059669; border-color: #059669; font-weight: 700;">
+                    ✓ COMPLETE SESSION SETUP
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    let ws = null;
+    let ephemeralSecret = null;
+    let activeBootstrapId = null;
+    let timerInterval = null;
+    let expiresAt = null;
+
+    const modal = document.getElementById("bootstrap-modal");
+    const canvas = document.getElementById("bs-canvas");
+    const ctx = canvas.getContext("2d");
+    const spinner = document.getElementById("bs-loading-spinner");
+    const statusBadge = document.getElementById("bs-status-badge");
+    const timerText = document.getElementById("bs-timer");
+
+    document.getElementById("btn-start-bootstrap").addEventListener("click", async function() {
+        try {
+            const res = await fetch("{% url 'dashboard:settings_linkedin_bootstrap_start' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/json"
+                }
+            });
+            const data = await res.json();
+            if (data.status !== "ok") {
+                alert("Failed to start server bootstrap: " + (data.error || "Unknown error"));
+                return;
+            }
+
+            activeBootstrapId = data.bootstrap_id;
+            ephemeralSecret = data.secret;
+            expiresAt = new Date(data.expires_at);
+
+            // Open modal
+            modal.style.display = "flex";
+            statusBadge.innerText = "INITIALIZING";
+            statusBadge.style.background = "#334155";
+            spinner.style.display = "block";
+            canvas.style.display = "none";
+
+            startTimer();
+            connectWebSocket(data.ws_url);
+
+        } catch (e) {
+            alert("Error initiating bootstrap: " + e);
+        }
+    });
+
+    function connectWebSocket(wsUrl) {
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = function() {
+            // First-message handshake: send single-use secret
+            ws.send(JSON.stringify({
+                type: "authorize",
+                secret: ephemeralSecret
+            }));
+            // Immediately clear ephemeral secret from memory
+            ephemeralSecret = null;
+        };
+
+        ws.onmessage = function(event) {
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg.type === "authorized") {
+                    statusBadge.innerText = "ACTIVE";
+                    statusBadge.style.background = "#059669";
+                    spinner.style.display = "none";
+                    canvas.style.display = "block";
+                    canvas.focus();
+                } else if (msg.type === "frame") {
+                    const img = new Image();
+                    img.onload = function() {
+                        ctx.drawImage(img, 0, 0, 1280, 800);
+                    };
+                    img.src = "data:image/jpeg;base64," + msg.data;
+                } else if (msg.type === "completed") {
+                    statusBadge.innerText = "COMPLETED";
+                    statusBadge.style.background = "#166534";
+                    alert("Session setup complete! Provenance set to HuntFlow-Managed. Verification required.");
+                    window.location.reload();
+                } else if (msg.type === "aborted") {
+                    statusBadge.innerText = "ABORTED";
+                    statusBadge.style.background = "#991b1b";
+                    closeModal();
+                } else if (msg.type === "error") {
+                    alert("Error: " + msg.message);
+                }
+            } catch (e) {
+                console.error("WS parse error:", e);
+            }
+        };
+
+        ws.onerror = function() {
+            statusBadge.innerText = "ERROR";
+            statusBadge.style.background = "#991b1b";
+        };
+
+        ws.onclose = function(e) {
+            if (statusBadge.innerText !== "COMPLETED") {
+                statusBadge.innerText = "DISCONNECTED (" + e.code + ")";
+                statusBadge.style.background = "#991b1b";
+            }
+        };
+    }
+
+    // Canvas Mouse & Keyboard Listeners
+    function mapCoords(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = 1280 / rect.width;
+        const scaleY = 800 / rect.height;
+        return {
+            x: Math.round((e.clientX - rect.left) * scaleX),
+            y: Math.round((e.clientY - rect.top) * scaleY)
+        };
+    }
+
+    canvas.addEventListener("mousemove", function(e) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        const { x, y } = mapCoords(e);
+        ws.send(JSON.stringify({ type: "mouse_move", x: x, y: y }));
+    });
+
+    canvas.addEventListener("mousedown", function(e) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        const { x, y } = mapCoords(e);
+        const btn = e.button === 2 ? "right" : (e.button === 1 ? "middle" : "left");
+        ws.send(JSON.stringify({ type: "mouse_down", x: x, y: y, button: btn }));
+    });
+
+    canvas.addEventListener("mouseup", function(e) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        const { x, y } = mapCoords(e);
+        const btn = e.button === 2 ? "right" : (e.button === 1 ? "middle" : "left");
+        ws.send(JSON.stringify({ type: "mouse_up", x: x, y: y, button: btn }));
+    });
+
+    canvas.addEventListener("wheel", function(e) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        e.preventDefault();
+        ws.send(JSON.stringify({ type: "wheel", delta_x: e.deltaX, delta_y: e.deltaY }));
+    }, { passive: false });
+
+    canvas.addEventListener("contextmenu", function(e) {
+        e.preventDefault();
+    });
+
+    window.addEventListener("keydown", function(e) {
+        if (!modal || modal.style.display === "none") return;
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+        e.preventDefault();
+        ws.send(JSON.stringify({ type: "key_down", key: e.key, code: e.code }));
+    });
+
+    window.addEventListener("keyup", function(e) {
+        if (!modal || modal.style.display === "none") return;
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+        e.preventDefault();
+        ws.send(JSON.stringify({ type: "key_up", key: e.key, code: e.code }));
+    });
+
+    document.getElementById("btn-complete-bootstrap").addEventListener("click", function() {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            statusBadge.innerText = "COMPLETING...";
+            ws.send(JSON.stringify({ type: "complete" }));
+        }
+    });
+
+    document.getElementById("btn-abort-bootstrap").addEventListener("click", function() {
+        if (confirm("Are you sure you want to abort the bootstrap session?")) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: "abort" }));
+            }
+            closeModal();
+        }
+    });
+
+    document.getElementById("btn-close-modal").addEventListener("click", function() {
+        closeModal();
+    });
+
+    function closeModal() {
+        if (ws) {
+            try { ws.close(); } catch(e) {}
+            ws = null;
+        }
+        if (timerInterval) clearInterval(timerInterval);
+        modal.style.display = "none";
+    }
+
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(function() {
+            if (!expiresAt) return;
+            const now = new Date();
+            const diff = Math.max(0, Math.floor((expiresAt - now) / 1000));
+            const mins = Math.floor(diff / 60).toString().padStart(2, '0');
+            const secs = (diff % 60).toString().padStart(2, '0');
+            timerText.innerText = mins + ":" + secs;
+            if (diff <= 0) {
+                clearInterval(timerInterval);
+                statusBadge.innerText = "EXPIRED";
+                statusBadge.style.background = "#991b1b";
+            }
+        }, 1000);
+    }
+})();
+</script>
+{% endblock %}

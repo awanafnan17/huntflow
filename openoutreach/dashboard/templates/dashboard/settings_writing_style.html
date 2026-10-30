@@ -1,0 +1,87 @@
+{% extends 'dashboard/settings_base.html' %}
+
+{% block settings_title %}AI & Writing Style - Settings{% endblock %}
+{% block settings_page_title %}AI & Writing Style{% endblock %}
+{% block settings_page_subtitle %}Configure voice, tone, and personalization style for your automated messages.{% endblock %}
+
+{% block settings_content %}
+<div style="max-width: 780px;">
+
+    <!-- Candidate Voice Engine Status -->
+    <div class="saas-card" style="margin-bottom: 24px; border-left: 4px solid #10b981;">
+        <div class="saas-card-header">
+            <div class="saas-card-title" style="color: #047857;">
+                ✨ Candidate Voice Engine: Active
+            </div>
+            <span class="badge badge-success">Enabled ✓</span>
+        </div>
+        <p style="font-size: 13px; color: #334155; line-height: 1.5;">
+            Messages are automatically composed in a human, casual, and punchy style. Every claim is strictly verified against your candidate profile with zero AI hallucinations or banned canned phrases.
+        </p>
+    </div>
+
+    <!-- Live Preview Card -->
+    <div class="saas-card" style="margin-bottom: 24px; background: #f8fafc;">
+        <div class="saas-card-header">
+            <div class="saas-card-title">💬 Live Sample Preview</div>
+            <span class="badge badge-secondary">Under 300 Chars</span>
+        </div>
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; font-size: 14px; color: #1e293b; line-height: 1.5;">
+            "{{ sample_note }}"
+        </div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 8px;">
+            Candidate identity: <strong>{{ candidate_name }}</strong>
+        </div>
+    </div>
+
+    <!-- Writing Style Preferences Form -->
+    <div class="saas-card">
+        <div class="saas-card-header">
+            <div class="saas-card-title">⚙️ Style Preferences</div>
+        </div>
+
+        <form method="POST" action="{% url 'dashboard:settings_writing_style' %}">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label class="form-label">Tone</label>
+                <select name="tone" class="form-input">
+                    <option value="casual_direct" selected>Casual & Direct (Recommended)</option>
+                    <option value="professional_polite">Professional & Polite</option>
+                    <option value="curious_technical">Curious & Technical</option>
+                </select>
+                <div class="form-help">Sets the conversational rhythm and greeting style.</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Message Length</label>
+                <select name="message_length" class="form-input">
+                    <option value="short" selected>Short & Punchy (Under 300 characters - Best response rate)</option>
+                    <option value="medium">Medium (300-500 characters)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Emoji Preference</label>
+                <select name="emoji_preference" class="form-input">
+                    <option value="minimal" selected>Minimal (At most 1 natural emoji)</option>
+                    <option value="none">None (Strictly plain text)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Call-to-Action Aggressiveness</label>
+                <select name="cta_style" class="form-input">
+                    <option value="low_friction" selected>Curious & Low Friction ("Curious how you tackle X")</option>
+                    <option value="direct_chat">Direct ("Open to a quick 10-min chat next week?")</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 12px;">
+                Save Preferences
+            </button>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

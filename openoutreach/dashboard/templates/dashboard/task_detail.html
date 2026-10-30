@@ -1,0 +1,254 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Task #{{ task.id }} Details{% endblock %}
+
+{% block page_title %}Task Detail{% endblock %}
+{% block page_subtitle %}Manage individual task scheduling, status, and manual queues.{% endblock %}
+
+{% block main_content %}
+<div style="margin-bottom: 20px;">
+    <a href="{% url 'dashboard:tasks' %}" class="btn" style="border-color: #cbd5e1; font-weight: 600;">&larr; Back to Task Queue</a>
+</div>
+
+{% if messages %}
+<div style="margin-bottom: 20px;">
+    {% for msg in messages %}
+        <div style="padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; font-weight: 500; font-size: 14px;
+            {% if msg.tags == 'success' %}background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a;
+            {% else %}background-color: #fef2f2; border: 1px solid #fecaca; color: #dc2626;{% endif %}">
+            {{ msg }}
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; margin-bottom: 30px;">
+    {# State Panel #}
+    <div class="card" style="padding: 24px; border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <h3 style="margin-top: 0; margin-bottom: 18px; font-size: 16px; font-weight: 700; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
+            Task State Panel
+        </h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr style="border-bottom: 1px solid #f8fafc;">
+                <td style="padding: 10px 0; color: #64748b; font-weight: 500; width: 40%;">Task ID</td>
+                <td style="padding: 10px 0; font-weight: 600; color: #1e293b;">#{{ task.id }}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f8fafc;">
+                <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Task Type</td>
+                <td style="padding: 10px 0;"><span class="badge badge-info">{{ task.task_type }}</span></td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f8fafc;">
+                <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Status</td>
+                <td style="padding: 10px 0;">
+                    <span class="badge {% if task.status == 'completed' %}badge-success{% elif task.status == 'running' %}badge-info{% elif task.status == 'failed' %}badge-danger{% elif task.status == 'cancelled' %}badge-warning{% else %}badge-secondary{% endif %}">
+                        {{ task.status }}
+                    </span>
+                </td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f8fafc;">
+                <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Scheduled (UTC)</td>
+                <td style="padding: 10px 0; color: #334155; font-weight: 500;">{{ task.scheduled_at|date:"Y-m-d H:i:s" }}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f8fafc;">
+                <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Campaign</td>
+                <td style="padding: 10px 0;">
+                    {% if campaign %}
+                        <a href="{% url 'dashboard:campaigns' %}" style="color: #3b82f6; text-decoration: none; font-weight: 600;">{{ campaign.name }}</a>
+                    {% else %}
+                        <span style="color: #94a3b8;">None</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f8fafc;">
+                <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Target Lead</td>
+                <td style="padding: 10px 0;">
+                    {% if lead %}
+                        <a href="{% url 'dashboard:lead_detail' lead.pk %}" style="color: #3b82f6; text-decoration: none; font-weight: 600;">{{ lead.public_identifier }}</a>
+                    {% else %}
+                        <span style="color: #94a3b8;">None</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f8fafc;">
+                <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Created At</td>
+                <td style="padding: 10px 0; color: #64748b;">{{ task.created_at|date:"Y-m-d H:i:s" }}</td>
+            </tr>
+            {% if task.started_at %}
+            <tr style="border-bottom: 1px solid #f8fafc;">
+                <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Started At</td>
+                <td style="padding: 10px 0; color: #64748b;">{{ task.started_at|date:"Y-m-d H:i:s" }}</td>
+            </tr>
+            {% endif %}
+            {% if task.completed_at %}
+            <tr style="border-bottom: 1px solid #f8fafc;">
+                <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Completed At</td>
+                <td style="padding: 10px 0; color: #64748b;">{{ task.completed_at|date:"Y-m-d H:i:s" }}</td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+
+    {# Operator Actions #}
+    <div class="card" style="padding: 24px; border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <h3 style="margin-top: 0; margin-bottom: 18px; font-size: 16px; font-weight: 700; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
+            Operator Pipeline Actions
+        </h3>
+
+        {% if task.status == 'failed' %}
+            {# Retry Failed Task #}
+            <div style="margin-bottom: 20px; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc;">
+                <h4 style="margin-top: 0; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #334155;">Retry Failed Task</h4>
+                <form method="post" style="display: flex; flex-direction: column; gap: 10px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="retry">
+                    <label style="font-size: 12px; font-weight: 500; color: #475569;">
+                        Execution DateTime (leave blank for immediate now):
+                        <input type="datetime-local" name="scheduled_at" class="select-box" style="width: 100%; margin-top: 4px; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    </label>
+                    <button type="submit" class="btn btn-primary" style="font-weight: 600;">Queue Retry Now</button>
+                </form>
+            </div>
+        {% endif %}
+
+        {% if task.status == 'pending' %}
+            {# Cancel Pending Task #}
+            <div style="margin-bottom: 20px; padding: 15px; border-radius: 8px; border: 1px solid #fed7aa; background: #fff7ed;">
+                <h4 style="margin-top: 0; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #c2410c;">Cancel Pending Task</h4>
+                <form method="post" style="display: flex; flex-direction: column; gap: 10px;" onsubmit="return confirm('Are you sure you want to cancel this pending task? This action cannot be undone.');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="cancel">
+                    <input type="hidden" name="confirm" value="yes">
+                    <p style="font-size: 12px; color: #7c2d12; margin: 0;">Cancelling prevents the daemon from executing this slot. The task row is preserved as cancelled.</p>
+                    <button type="submit" class="btn btn-warning" style="font-weight: 600; border-color: #f97316; color: #ea580c; background: #ffedd5;">Cancel Task</button>
+                </form>
+            </div>
+
+            {# Reschedule Pending Task #}
+            <div style="margin-bottom: 20px; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc;">
+                <h4 style="margin-top: 0; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #334155;">Reschedule Pending Task</h4>
+                <form method="post" style="display: flex; flex-direction: column; gap: 10px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reschedule">
+                    <label style="font-size: 12px; font-weight: 500; color: #475569;">
+                        New Target Time:
+                        <input type="datetime-local" name="scheduled_at" required class="select-box" style="width: 100%; margin-top: 4px; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    </label>
+                    <button type="submit" class="btn btn-primary" style="font-weight: 600;">Update Schedule Time</button>
+                </form>
+            </div>
+        {% endif %}
+
+        {% if task.status == 'running' %}
+            {# Mark Stale Running Task as Failed #}
+            <div style="padding: 15px; border-radius: 8px; border: 1px solid #fecaca; background: #fef2f2;">
+                <h4 style="margin-top: 0; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #991b1b;">Stale running recovery</h4>
+                <form method="post" style="display: flex; flex-direction: column; gap: 10px;" onsubmit="return confirm('WARNING: Only execute if the daemon process died mid-task and this task is stuck. Marking as failed will allow scheduler reconciliation. Proceed?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="mark_stale_failed">
+                    <input type="hidden" name="confirm" value="yes">
+                    <p style="font-size: 12px; color: #991b1b; margin: 0;">Force status change of this running task to failed. This does not kill the OS process or stop the daemon.</p>
+                    <button type="submit" class="btn" style="border-color: #ef4444; color: #ef4444; background: transparent; font-weight: 600;">Mark Stale Task Failed</button>
+                </form>
+            </div>
+        {% endif %}
+
+        {% if task.status == 'completed' or task.status == 'cancelled' %}
+            <p style="font-size: 13px; color: #64748b; font-style: italic; text-align: center; margin: 20px 0;">
+                No manual actions are available for this {{ task.status }} task.
+            </p>
+        {% endif %}
+    </div>
+</div>
+
+{# Payload inspect #}
+<div class="card" style="padding: 24px; border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 30px;">
+    <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 16px; font-weight: 700; color: #1e293b;">
+        Task Payload
+    </h3>
+    <pre style="margin: 0; padding: 16px; background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; font-family: monospace; font-size: 13px; color: #334155; overflow-x: auto;">{{ payload_json }}</pre>
+</div>
+
+{# Audit Trail Events #}
+<div class="card" style="padding: 24px; border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 30px;">
+    <h3 style="margin-top: 0; margin-bottom: 18px; font-size: 16px; font-weight: 700; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
+        Manual Task Event Audit History
+    </h3>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Timestamp (UTC)</th>
+                    <th>Operator</th>
+                    <th>Action</th>
+                    <th>Status Change</th>
+                    <th>Scheduled Change</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in audit_events %}
+                <tr>
+                    <td style="font-size: 13px; color: #64748b;">{{ event.created_at|date:"Y-m-d H:i:s" }}</td>
+                    <td style="font-size: 13px; font-weight: 600; color: #334155;">{{ event.operator.username|default:"System" }}</td>
+                    <td><span class="badge badge-info" style="text-transform: uppercase;">{{ event.action }}</span></td>
+                    <td style="font-size: 13px; font-weight: 500;">
+                        {{ event.previous_status }} &rarr; {{ event.new_status }}
+                    </td>
+                    <td style="font-size: 12px; color: #64748b;">
+                        {% if event.previous_scheduled_at or event.new_scheduled_at %}
+                            {{ event.previous_scheduled_at|date:"M d, H:i" }} &rarr; {{ event.new_scheduled_at|date:"M d, H:i" }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 13px; color: #475569;">{{ event.note }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">
+                        No manual task event audit history has been logged for this task.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{# Related Logs #}
+<div class="card" style="padding: 24px; border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <h3 style="margin-top: 0; margin-bottom: 18px; font-size: 16px; font-weight: 700; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
+        Related Outreach Logs
+    </h3>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Timestamp (UTC)</th>
+                    <th>Type</th>
+                    <th>Campaign</th>
+                    <th>Action Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in related_logs %}
+                <tr>
+                    <td style="font-size: 13px; color: #64748b;">{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+                    <td><span class="badge badge-info">{{ log.action_type }}</span></td>
+                    <td style="font-size: 13px; font-weight: 600;">{{ log.campaign.name }}</td>
+                    <td style="font-size: 13px; color: #475569;">
+                        <code>{{ log.metadata }}</code>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">
+                        No related outreach logs identified.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

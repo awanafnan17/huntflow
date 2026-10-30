@@ -1,0 +1,283 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Review Application: {{ application.job.title }} at {{ application.job.company }}{% endblock %}
+
+{% block page_title %}Application Draft Review{% endblock %}
+{% block page_subtitle %}{{ application.job.title }} &bull; {{ application.job.company }}{% endblock %}
+
+{% block main_content %}
+<div style="max-width: 1200px; display: grid; grid-template-columns: 3fr 1fr; gap: 24px; align-items: start;">
+    
+    {# Left Column: CV and Cover Letter Editor + Structured Content & Traceability #}
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+        
+        {# Main Form Editor #}
+        <div class="card" style="padding: 24px;">
+            <div>
+                <a href="{% url 'career:job_detail' application.job.pk %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline; display: block; margin-bottom: 20px;">
+                    &larr; Back to Job Details
+                </a>
+            </div>
+
+            {# Version Switcher Selector Panel #}
+            <div style="margin-bottom: 20px; padding: 12px; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 13px; font-weight: bold; color: #475569;">Viewing Draft Version #{{ approval_item.draft.version_number }}</span>
+                <form method="GET" action="{% url 'career:application_review' application.pk %}" style="display: flex; gap: 8px; align-items: center;">
+                    <label style="font-size: 12px; color: #64748b; font-weight: 500;">Switch Version:</label>
+                    <select name="version" onchange="this.form.submit()" style="font-size: 12px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                        {% for d in drafts %}
+                            <option value="{{ d.version_number }}" {% if d.version_number == approval_item.draft.version_number %}selected{% endif %}>
+                                Version #{{ d.version_number }} ({{ d.created_at|date:"Y-m-d H:i" }} UTC)
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+
+            {# Integrity Error Alerts #}
+            {% if integrity_error %}
+            <div style="margin-bottom: 20px; background-color: #fef2f2; border: 1px solid #fee2e2; padding: 12px; border-radius: 6px; color: #b91c1c; font-size: 13px;">
+                <strong>Factual Integrity Breached:</strong> {{ integrity_error }}
+            </div>
+            {% endif %}
+
+            <form method="POST" action="{% url 'career:application_review' application.pk %}">
+                {% csrf_token %}
+
+                {% if form.errors %}
+                <div class="alert alert-error" style="margin-bottom: 20px;">
+                    <strong>Please correct the errors below:</strong>
+                    <ul style="margin: 4px 0 0 0; padding-left: 20px;">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {# Tab/Section for Tailored CV #}
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #1e293b;">
+                        Tailored Resume/CV (Markdown)
+                    </label>
+                    {% if approval_item.status != 'approved' %}
+                        {{ form.tailored_cv }}
+                        <p style="font-size: 12px; color: #64748b; margin-top: 4px;">Refine resume bullets or summary. Ensure strict factual grounding.</p>
+                    {% else %}
+                        <div style="border: 1px solid #cbd5e1; border-radius: 6px; background-color: #f8fafc; padding: 12px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; font-size: 13px; color: #334155;">{{ application.tailored_cv }}</div>
+                    {% endif %}
+                </div>
+
+                {# Tab/Section for Cover Letter #}
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #1e293b;">
+                        Tailored Cover Letter
+                    </label>
+                    {% if approval_item.status != 'approved' %}
+                        {{ form.cover_letter }}
+                        <p style="font-size: 12px; color: #64748b; margin-top: 4px;">Refine cover letter structure or details targeting this company.</p>
+                    {% else %}
+                        <div style="border: 1px solid #cbd5e1; border-radius: 6px; background-color: #f8fafc; padding: 12px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; font-size: 13px; color: #334155;">{{ application.cover_letter }}</div>
+                    {% endif %}
+                </div>
+
+                {% if approval_item.status != 'approved' %}
+                <div style="display: flex; gap: 12px; margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                    <button type="submit" name="action" value="save" class="btn" style="padding: 10px 20px; font-size: 13px; background-color: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; font-weight: bold;">
+                        Save Draft Changes (Creates Version #{{ approval_item.draft.version_number|add:1 }})
+                    </button>
+                </div>
+                {% endif %}
+            </form>
+            
+            <div style="display: flex; gap: 12px; margin-top: 16px;">
+                <a href="{% url 'career:download_docx' application.pk %}" class="btn" style="background-color: #10b981; color: white; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 8px 16px; font-weight: bold; border-radius: 4px; text-decoration: none;">
+                    Download Protected DOCX Application Export
+                </a>
+            </div>
+        </div>
+
+        {# Structured CV Sections View #}
+        <div class="card" style="padding: 24px;">
+            <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">Structured CV Sections (Fact Grounding)</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                    <strong style="font-size: 13px; color: #475569; display: block; margin-bottom: 4px;">Target Professional Summary:</strong>
+                    <p style="margin: 0; font-size: 13px; background: #f8fafc; padding: 10px; border-radius: 4px; color: #334155; border: 1px solid #e2e8f0;">{{ approval_item.draft.structured_cv.summary|default:"Not specified" }}</p>
+                </div>
+                
+                <div>
+                    <strong style="font-size: 13px; color: #475569; display: block; margin-bottom: 4px;">Tailored Work Experience:</strong>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        {% for exp in approval_item.draft.structured_cv.experience %}
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; border: 1px solid #e2e8f0; font-size: 12px;">
+                            <strong>{{ exp.title }} at {{ exp.company }}</strong> ({{ exp.start }} - {{ exp.end }})
+                            <ul style="margin: 4px 0 0 0; padding-left: 16px; color: #475569;">
+                                {% for b in exp.bullet_points %}
+                                <li>{{ b }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% empty %}
+                        <p style="font-size: 12px; color: #64748b; margin: 0;">No work experience specified.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div>
+                    <strong style="font-size: 13px; color: #475569; display: block; margin-bottom: 4px;">Core Skills:</strong>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                        {% for skill in approval_item.draft.structured_cv.skills %}
+                        <span style="font-size: 12px; background: #e2e8f0; padding: 4px 8px; border-radius: 4px; color: #334155;">{{ skill }}</span>
+                        {% empty %}
+                        <span style="font-size: 12px; color: #64748b;">No core skills specified.</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Claim-Level Factual Traceability Map #}
+        <div class="card" style="padding: 24px;">
+            <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">Claim-Level Factual Traceability</h3>
+            <p style="margin: 0 0 16px 0; font-size: 13px; color: #64748b;">
+                Every claim, metric, and skill in the tailored CV is strictly traceable to a verified candidate fact.
+            </p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                {% for exp in approval_item.draft.traceability_map.experience_mappings %}
+                <div style="font-size: 12px; background: #f0fdf4; padding: 8px 12px; border-radius: 4px; border: 1px solid #bbf7d0; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Experience claim: <strong>{{ exp.title }} at {{ exp.company }}</strong></span>
+                    <span style="font-size: 11px; background: #86efac; color: #14532d; padding: 2px 6px; border-radius: 4px;">Linked Fact ID #{{ exp.fact_id }}</span>
+                </div>
+                {% endfor %}
+                {% for sk in approval_item.draft.traceability_map.skill_mappings %}
+                <div style="font-size: 12px; background: #f0fdf4; padding: 8px 12px; border-radius: 4px; border: 1px solid #bbf7d0; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Skill claim: <strong>{{ sk.name }}</strong></span>
+                    <span style="font-size: 11px; background: #86efac; color: #14532d; padding: 2px 6px; border-radius: 4px;">Linked Fact ID #{{ sk.fact_id }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    {# Right Column: Status Summary & Approval Actions #}
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+        
+        {# Generic Approval Center Card #}
+        <div class="card" style="padding: 24px;">
+            <h3 style="margin: 0 0 16px 0; font-size: 15px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">Approval Center</h3>
+            
+            <div style="margin-bottom: 16px;">
+                <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">Approval Status</span>
+                <span class="badge {% if approval_item.status == 'approved' %}badge-success{% elif approval_item.status == 'needs_info' %}badge-warning{% elif approval_item.status == 'revoked' %}badge-error{% else %}badge-info{% endif %}" style="font-size: 12px; font-weight: bold;">
+                    {{ approval_item.get_status_display }}
+                </span>
+            </div>
+
+            {% if approval_item.status == 'needs_info' %}
+            <div style="margin-bottom: 16px; padding: 12px; background-color: #fffbe6; border: 1px solid #ffe58f; border-radius: 4px; font-size: 12px;">
+                <strong style="color: #d46b08; display: block; margin-bottom: 4px;">Information Needed:</strong>
+                <p style="margin: 0; color: #595959;">{{ approval_item.needs_info_reason }}</p>
+            </div>
+            {% endif %}
+
+            <div style="margin-bottom: 16px;">
+                <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">Active Draft Version</span>
+                <span style="font-size: 13px; font-weight: bold; color: #1e293b;">Version #{{ approval_item.draft.version_number }}</span>
+            </div>
+
+            {# Action Forms #}
+            {% if perms.career.approve_profile or request.user.is_superuser %}
+                {% if approval_item.status != 'approved' %}
+                <div style="border-top: 1px solid #f1f5f9; padding-top: 12px; display: flex; flex-direction: column; gap: 12px;">
+                    
+                    {# Approve Form #}
+                    <form method="POST" action="{% url 'career:application_review' application.pk %}">
+                        {% csrf_token %}
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <input type="text" name="note" placeholder="Add approval note..." style="font-size: 12px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                            <button type="submit" name="action" value="approve" class="btn btn-primary" style="width: 100%; font-size: 12px; padding: 8px; font-weight: bold;">
+                                Approve & Freeze Drafts
+                            </button>
+                        </div>
+                    </form>
+
+                    {# Flag Needs Info Form #}
+                    <form method="POST" action="{% url 'career:application_review' application.pk %}">
+                        {% csrf_token %}
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <input type="text" name="reason" placeholder="State info required..." required style="font-size: 12px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                            <button type="submit" name="action" value="needs_info" class="btn" style="width: 100%; font-size: 12px; padding: 8px; background-color: #fff1f0; border: 1px solid #ffa39e; color: #cf1322; font-weight: bold;">
+                                Flag Needs Info
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+                {% else %}
+                
+                {# Revocation Form #}
+                <div style="border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                    <form method="POST" action="{% url 'career:application_review' application.pk %}">
+                        {% csrf_token %}
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <input type="text" name="note" placeholder="Reason for revocation..." required style="font-size: 12px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                            <button type="submit" name="action" value="revert_to_draft" class="btn" style="width: 100%; font-size: 12px; padding: 8px; background-color: #fff; color: #dc2626; border: 1px solid #fca5a5; font-weight: bold;">
+                                Revoke Approval & Revert to Draft
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+            {% else %}
+                <p style="font-size: 11px; color: #64748b; font-style: italic; margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
+                    Only authorized operators can approve, revoke, or request information updates.
+                </p>
+            {% endif %}
+            
+            {% if application.status == 'approved' and application.approval %}
+            <div style="margin-top: 16px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">CV Checksum</span>
+                <span style="font-family: monospace; font-size: 11px; background-color: #f1f5f9; padding: 2px 4px; border-radius: 4px; color: #475569; display: block; overflow-x: auto;">
+                    {{ application.approval.cv_hash }}
+                </span>
+            </div>
+            <div style="margin-top: 12px;">
+                <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">Cover Letter Checksum</span>
+                <span style="font-family: monospace; font-size: 11px; background-color: #f1f5f9; padding: 2px 4px; border-radius: 4px; color: #475569; display: block; overflow-x: auto;">
+                    {{ application.approval.cover_letter_hash }}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+
+        {# Generic Approval History Timeline #}
+        <div class="card" style="padding: 24px;">
+            <h3 style="margin: 0 0 16px 0; font-size: 15px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">Immutable Approval History</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px; max-height: 250px; overflow-y: auto;">
+                {% for log in history %}
+                <div style="font-size: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-weight: bold; color: #475569;">
+                        <span>{{ log.actor.username }}</span>
+                        <span style="font-weight: bold; color: {% if log.action == 'approve' %}#16a34a{% elif log.action == 'revoke' %}#dc2626{% else %}#d97706{% endif %};">
+                            {{ log.get_action_display }}
+                        </span>
+                    </div>
+                    <div style="color: #64748b; margin-top: 2px;">{{ log.note }}</div>
+                    <div style="color: #94a3b8; font-size: 11px; margin-top: 2px;">{{ log.timestamp|date:"Y-m-d H:i:s" }} UTC</div>
+                </div>
+                {% empty %}
+                <div style="font-size: 12px; color: #94a3b8; font-style: italic; text-align: center;">No history logs recorded.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

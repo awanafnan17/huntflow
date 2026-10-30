@@ -1,0 +1,76 @@
+{% extends 'dashboard/settings_base.html' %}
+
+{% block settings_title %}Advanced - Settings{% endblock %}
+{% block settings_page_title %}Advanced Administration{% endblock %}
+{% block settings_page_subtitle %}Internal developer tools, daemon monitoring, raw task queues, and system diagnostics.{% endblock %}
+
+{% block settings_content %}
+<div style="max-width: 900px;">
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+        <!-- Operations -->
+        <a href="{% url 'dashboard:operations' %}" class="saas-card saas-card-hover" style="text-decoration: none; color: inherit;">
+            <div style="font-size: 20px; margin-bottom: 8px;">🛠️</div>
+            <div style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 4px;">Operations & Queue</div>
+            <div style="font-size: 12px; color: #64748b;">Manage task dispatching, live worker queues, and execution holds.</div>
+        </a>
+
+        <!-- Daemon Control -->
+        <a href="{% url 'dashboard:daemon' %}" class="saas-card saas-card-hover" style="text-decoration: none; color: inherit;">
+            <div style="font-size: 20px; margin-bottom: 8px;">⚡</div>
+            <div style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 4px;">Daemon Monitor</div>
+            <div style="font-size: 12px; color: #64748b;">Check background process heartbeat, PID status, and logs.</div>
+        </a>
+
+        <!-- Raw Tasks -->
+        <a href="{% url 'dashboard:tasks' %}" class="saas-card saas-card-hover" style="text-decoration: none; color: inherit;">
+            <div style="font-size: 20px; margin-bottom: 8px;">📋</div>
+            <div style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 4px;">Task Engine</div>
+            <div style="font-size: 12px; color: #64748b;">Inspect, reschedule, or cancel individual background queue tasks.</div>
+        </a>
+
+        <!-- System Diagnostics -->
+        <a href="{% url 'dashboard:diagnostics' %}" class="saas-card saas-card-hover" style="text-decoration: none; color: inherit;">
+            <div style="font-size: 20px; margin-bottom: 8px;">🩺</div>
+            <div style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 4px;">Diagnostics</div>
+            <div style="font-size: 12px; color: #64748b;">Run automated health checks across database, Ollama, and Playwright.</div>
+        </a>
+
+        <!-- Launch Readiness -->
+        <a href="{% url 'dashboard:readiness' %}" class="saas-card saas-card-hover" style="text-decoration: none; color: inherit;">
+            <div style="font-size: 20px; margin-bottom: 8px;">🚀</div>
+            <div style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 4px;">Launch Readiness</div>
+            <div style="font-size: 12px; color: #64748b;">Verify preflight criteria before starting external campaign runs.</div>
+        </a>
+
+        <!-- Action Logs -->
+        <a href="{% url 'dashboard:action_logs' %}" class="saas-card saas-card-hover" style="text-decoration: none; color: inherit;">
+            <div style="font-size: 20px; margin-bottom: 8px;">📝</div>
+            <div style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 4px;">Raw Action Logs</div>
+            <div style="font-size: 12px; color: #64748b;">Audit full historical record of sent requests, messages, and results.</div>
+        </a>
+
+        <!-- LLM Config -->
+        <a href="{% url 'dashboard:settings_llm' %}" class="saas-card saas-card-hover" style="text-decoration: none; color: inherit;">
+            <div style="font-size: 20px; margin-bottom: 8px;">🤖</div>
+            <div style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 4px;">LLM & Model Settings</div>
+            <div style="font-size: 12px; color: #64748b;">Configure Ollama endpoint and fallback models.</div>
+        </a>
+
+        <!-- BetterContact Config -->
+        <a href="{% url 'dashboard:settings_bettercontact' %}" class="saas-card saas-card-hover" style="text-decoration: none; color: inherit;">
+            <div style="font-size: 20px; margin-bottom: 8px;">🔍</div>
+            <div style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 4px;">BetterContact Enrichment</div>
+            <div style="font-size: 12px; color: #64748b;">Manage BetterContact API credentials for email finding.</div>
+        </a>
+
+        <!-- Test & Synthetic Data -->
+        <a href="{% url 'dashboard:settings_test_data' %}" class="saas-card saas-card-hover" style="text-decoration: none; color: inherit;">
+            <div style="font-size: 20px; margin-bottom: 8px;">🧪</div>
+            <div style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 4px;">Test / Synthetic Data</div>
+            <div style="font-size: 12px; color: #64748b;">Audit and inspect synthetic QA campaigns and mock job applications.</div>
+        </a>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,155 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Review Extracted Facts{% endblock %}
+
+{% block page_title %}Extraction Review & Approval{% endblock %}
+{% block page_subtitle %}Review, edit, and approve candidate profile facts extracted from the source CV before committing them.{% endblock %}
+
+{% block main_content %}
+<div style="max-width: 1000px; display: flex; flex-direction: column; gap: 24px;">
+    <div>
+        <a href="{% url 'career:overview' %}" style="font-size: 13px; color: #2563eb; font-weight: bold; text-decoration: underline; display: block;">
+            &larr; Back to Career Overview
+        </a>
+    </div>
+
+    <form method="POST" action="{% url 'career:extraction_review' record.pk %}">
+        {% csrf_token %}
+
+        {# 1. General Profile Info to Commit #}
+        <div class="card" style="padding: 24px; margin-bottom: 24px;">
+            <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">Profile Bio Information</h3>
+            <p style="font-size: 12px; color: #64748b; margin-top: -8px; margin-bottom: 16px;">
+                Specify the bio details that will be saved in the new profile version when committing.
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">Full Name</label>
+                    <input type="text" name="full_name" value="{{ profile.full_name }}" class="input-text" style="width: 100%; font-size: 13px; padding: 8px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">Email Address</label>
+                    <input type="email" name="email" value="{{ profile.email }}" class="input-text" style="width: 100%; font-size: 13px; padding: 8px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">Phone Number</label>
+                    <input type="text" name="phone" value="{{ profile.phone }}" class="input-text" style="width: 100%; font-size: 13px; padding: 8px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">LinkedIn URL</label>
+                    <input type="url" name="linkedin_url" value="{{ profile.linkedin_url }}" class="input-text" style="width: 100%; font-size: 13px; padding: 8px;">
+                </div>
+            </div>
+            <div>
+                <label style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px;">Career Summary</label>
+                <textarea name="summary" rows="3" class="input-text" style="width: 100%; font-size: 13px; padding: 8px;">{{ profile.summary }}</textarea>
+            </div>
+        </div>
+
+        {# 2. Draft Facts review #}
+        <div class="card" style="padding: 24px;">
+            <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">Extracted Fact Drafts</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                {% for draft in drafts %}
+                <div class="card" style="padding: 16px; border: 1px solid #cbd5e1; background-color: #fafafa;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; margin-bottom: 12px;">
+                        <div>
+                            <span class="badge badge-info" style="font-size: 11px;">{{ draft.get_fact_type_display }}</span>
+                            <strong style="margin-left: 8px; font-size: 14px; color: #1e293b;">{{ draft.category }}</strong>
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: bold; color: #475569; margin-right: 8px;">Approval Decision:</label>
+                            <select name="draft_{{ draft.id }}_status" class="select-box" style="padding: 4px; font-size: 12px; width: auto; display: inline-block;">
+                                {% for choice in draft.STATUS_CHOICES %}
+                                <option value="{{ choice.0 }}" {% if draft.status == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    {% if draft.fact_type == "experience" %}
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 10px;">
+                        <div>
+                            <label style="display: block; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 2px;">Company</label>
+                            <input type="text" name="draft_{{ draft.id }}_company" value="{{ draft.value.company }}" class="input-text" style="font-size: 12px; padding: 6px; width: 100%;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 2px;">Job Title</label>
+                            <input type="text" name="draft_{{ draft.id }}_title" value="{{ draft.value.title }}" class="input-text" style="font-size: 12px; padding: 6px; width: 100%;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 2px;">Start Date</label>
+                            <input type="text" name="draft_{{ draft.id }}_start" value="{{ draft.value.start|default:'' }}" class="input-text" style="font-size: 12px; padding: 6px; width: 100%;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 2px;">End Date</label>
+                            <input type="text" name="draft_{{ draft.id }}_end" value="{{ draft.value.end|default:'' }}" class="input-text" style="font-size: 12px; padding: 6px; width: 100%;">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 2px;">Bullet Points (One per line)</label>
+                        <textarea name="draft_{{ draft.id }}_bullet_points" rows="4" class="input-text" style="font-size: 12px; padding: 6px; width: 100%;">{% for bp in draft.value.bullet_points %}{{ bp }}{% if not forloop.last %}
+{% endif %}{% endfor %}</textarea>
+                    </div>
+
+                    {% elif draft.fact_type == "education" %}
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <div>
+                            <label style="display: block; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 2px;">School / University</label>
+                            <input type="text" name="draft_{{ draft.id }}_school" value="{{ draft.value.school }}" class="input-text" style="font-size: 12px; padding: 6px; width: 100%;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 2px;">Degree / Field</label>
+                            <input type="text" name="draft_{{ draft.id }}_degree" value="{{ draft.value.degree|default:'' }}" class="input-text" style="font-size: 12px; padding: 6px; width: 100%;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 2px;">Year</label>
+                            <input type="text" name="draft_{{ draft.id }}_year" value="{{ draft.value.year|default:'' }}" class="input-text" style="font-size: 12px; padding: 6px; width: 100%;">
+                        </div>
+                    </div>
+
+                    {% elif draft.fact_type == "skill" %}
+                    <div>
+                        <label style="display: block; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 2px;">Skill Name</label>
+                        <input type="text" name="draft_{{ draft.id }}_name" value="{{ draft.value.name }}" class="input-text" style="font-size: 12px; padding: 6px; width: 100%;">
+                    </div>
+
+                    {% elif draft.fact_type == "certification" %}
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <div>
+                            <label style="display: block; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 2px;">Certification Name</label>
+                            <input type="text" name="draft_{{ draft.id }}_name" value="{{ draft.value.name }}" class="input-text" style="font-size: 12px; padding: 6px; width: 100%;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 2px;">Issuing Organization</label>
+                            <input type="text" name="draft_{{ draft.id }}_issuer" value="{{ draft.value.issuer|default:'' }}" class="input-text" style="font-size: 12px; padding: 6px; width: 100%;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 2px;">Year</label>
+                            <input type="text" name="draft_{{ draft.id }}_year" value="{{ draft.value.year|default:'' }}" class="input-text" style="font-size: 12px; padding: 6px; width: 100%;">
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div style="text-align: center; padding: 24px; color: #64748b; font-size: 13px;">
+                    No fact drafts were extracted.
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if drafts %}
+            <div style="margin-top: 24px; display: flex; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                <button type="submit" name="action" value="save" class="btn" style="padding: 10px 20px; font-size: 13px; font-weight: bold; background-color: #64748b; color: white;">
+                    Save Draft Changes
+                </button>
+                <button type="submit" name="action" value="commit" class="btn btn-primary" style="padding: 10px 20px; font-size: 13px; font-weight: bold;">
+                    Commit Approved Facts &rarr;
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}
