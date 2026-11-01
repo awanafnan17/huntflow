@@ -1,14 +1,12 @@
 <div align="center">
 
 # HuntFlow
-### AI-assisted outreach, job discovery, and application workflows
+### LinkedIn outreach, job applications, and CRM
 
 [![Status](https://img.shields.io/badge/status-in%20development-orange)](#development-status)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](requirements/base.txt)
 [![Django](https://img.shields.io/badge/Django-5.2%2B-092E20?logo=django&logoColor=white)](openoutreach/settings.py)
 [![License](https://img.shields.io/badge/license-GPLv3-blue)](LICENCE.md)
-
-**Discover opportunities. Draft relevant messages. Review applications. Track verified outcomes.**
 
 [Get started](#quick-start) · [How to use](docs/USAGE.md) · [Architecture](docs/ARCHITECTURE.md) · [Models and configuration](docs/CONFIGURATION.md)
 
@@ -18,13 +16,13 @@
 
 ## What HuntFlow does
 
-HuntFlow is a self-hosted Django application that brings LinkedIn outreach, email campaigns, a lightweight CRM, candidate profiles, and job applications into one workspace. It extends the open-source [OpenOutreach](https://github.com/eracle/OpenOutreach) codebase with a HuntFlow dashboard, career workflows, workspace controls, approval gates, and operational visibility.
+HuntFlow is a self-hosted Django application for LinkedIn outreach, email campaigns, candidate profiles, job applications, and CRM tracking. It extends the open-source [OpenOutreach](https://github.com/eracle/OpenOutreach) codebase with a HuntFlow dashboard, career workflows, workspace controls, approval gates, and audit views.
 
 **It includes code that sends LinkedIn connection requests and messages, follows up with connections, and submits supported LinkedIn Easy Apply job applications.** These are real external actions when an operator connects an account, configures a campaign, authorizes the workflow, and runs the worker. This public repository does not contain a connected account, personal database, credentials, browser session, resume, or live activity history.
 
 ## Development status
 
-> **HuntFlow is still in development.** This is a sanitized source release of an evolving application, not a finished hosted service or a claim that every LinkedIn page, application form, provider, or multi-tenant scenario is production-ready.
+> **HuntFlow is still in development.** This is a sanitized source release of an evolving application, not a finished hosted service or a claim that every LinkedIn page, application form, provider, or multi-tenant scenario is ready for production.
 
 The source includes many targeted regression tests, but some historical workflows remain specialized and require further generalization. A successful local test does not establish that live LinkedIn interactions will succeed. No live messages or applications were sent as part of preparing this repository.
 
@@ -138,13 +136,13 @@ huntflow/
 
 ## Documentation
 
-- [Using HuntFlow](docs/USAGE.md) — dashboard setup, outreach, job applications and outcome review.
-- [Architecture](docs/ARCHITECTURE.md) — modules, queue, models and action boundaries.
-- [Configuration](docs/CONFIGURATION.md) — environments, credentials, model choices and deployment.
-- [Security and public-release scope](SECURITY.md) — excluded data, secret handling and disclosure.
-- [Validation and limitations](docs/VALIDATION.md) — checks run for this source release and known limits.
-- [Contributing](CONTRIBUTING.md) — isolated tests and development practices.
-- [Attribution](NOTICE.md) — upstream origin and license obligations.
+- [Using HuntFlow](docs/USAGE.md): dashboard setup, outreach, job applications and outcome review.
+- [Architecture](docs/ARCHITECTURE.md): modules, queue, models and action boundaries.
+- [Configuration](docs/CONFIGURATION.md): environments, credentials, model choices and deployment.
+- [Security and public-release scope](SECURITY.md): excluded data, secret handling and disclosure.
+- [Validation and limitations](docs/VALIDATION.md): checks run for this source release and known limits.
+- [Contributing](CONTRIBUTING.md): isolated tests and development practices.
+- [Attribution](NOTICE.md): upstream origin and license obligations.
 
 ## License and attribution
 
